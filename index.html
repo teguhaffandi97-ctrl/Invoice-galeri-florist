@@ -192,7 +192,7 @@ function terbilang(n) {
 let toastTimer;
 function toast(msg) {
   const t = $("#toast"); t.textContent = msg; t.hidden = false;
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => (t.hidden = true), 3200);
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => (t.hidden = true), Math.min(9000, 2500 + msg.length * 45));
 }
 
 function sortedBy(arr, key) { return [...arr].sort((a, b) => String(a[key] || "").localeCompare(String(b[key] || ""), "id", { numeric: true })); }
@@ -776,13 +776,26 @@ function pdfFor(inv) {
 }
 // mode "share" opens Android's share sheet (WhatsApp, email, Drive); falls back to download.
 async function savePdf(inv, mode = "share") {
-  const p = pdfFor(inv); if (!p) return;
+  let p;
+  try { p = pdfFor(inv); } catch (e) { toast("PDF gagal dibuat: " + (e && e.message || e)); return; }
+  if (!p) return;
   if (mode === "share") {
-    const file = new File([p.blob], p.name, { type: "application/pdf" });
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      try { await navigator.share({ files: [file], title: p.name }); return; }
-      catch (e) { if (e && e.name === "AbortError") return; }
+    const file = new File([p.blob], p.name, { type: "application/pdf", lastModified: Date.now() });
+    if (navigator.canShare && navigator.share && navigator.canShare({ files: [file] })) {
+      const t0 = Date.now();
+      // Files only: with a title or text attached, some apps (WhatsApp) take the text and drop the PDF.
+      try { await navigator.share({ files: [file] }); return; }
+      catch (e) {
+        // A real "cancel" comes after the sheet was open; an instant AbortError means the phone refused.
+        if (e && e.name === "AbortError" && Date.now() - t0 > 800) return;
+        downloadBlob(p.blob, p.name);
+        toast("Kirim langsung tidak didukung di HP ini (" + (e && e.name || "error") + "). PDF diunduh ke folder Download — kirim dari WhatsApp > Dokumen.");
+        return;
+      }
     }
+    downloadBlob(p.blob, p.name);
+    toast("HP ini belum mendukung kirim langsung. PDF diunduh ke folder Download — kirim dari WhatsApp > Dokumen.");
+    return;
   }
   downloadBlob(p.blob, p.name); toast("PDF tersimpan di folder Download: " + p.name);
 }
