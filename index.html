@@ -27,16 +27,19 @@
   --font-display: "Marcellus", "Times New Roman", serif;
   --font-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
   --radius: 12px;
+  --s1: #2a78d6; --s2: #eb6834; --grid: #e6eaef; --axis: #c3cbd4; --crit: #d03b3b;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #11161c; --surface: #1a212a; --ink: #e8edf2; --muted: #9aa7b4; --line: #2c3642;
   --accent: #6ea8f0; --accent-ink: #0d1520; --accent-soft: #1d2d42;
   --ok: #6fd3a0; --ok-soft: #173326; --warn: #f0b860; --warn-soft: #3a2c14; --danger: #f2948c; --danger-soft: #3d1b19;
+  --s1: #3987e5; --s2: #d95926; --grid: #263039; --axis: #3a4652; --crit: #e66767;
   color-scheme: dark } }
 :root[data-theme="dark"] {
   --bg: #11161c; --surface: #1a212a; --ink: #e8edf2; --muted: #9aa7b4; --line: #2c3642;
   --accent: #6ea8f0; --accent-ink: #0d1520; --accent-soft: #1d2d42;
   --ok: #6fd3a0; --ok-soft: #173326; --warn: #f0b860; --warn-soft: #3a2c14; --danger: #f2948c; --danger-soft: #3d1b19;
+  --s1: #3987e5; --s2: #d95926; --grid: #263039; --axis: #3a4652; --crit: #e66767;
   color-scheme: dark }
 
 * { box-sizing: border-box; }
@@ -95,10 +98,38 @@ button:disabled { opacity: .55; cursor: default; }
 .sticky-total .lbl { font-size: 12px; color: var(--muted); }
 .sticky-total .val { font-size: 19px; font-weight: 700; }
 nav.tabs { position: fixed; left: 0; right: 0; bottom: 0; background: var(--surface); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom, 0px); z-index: 6; }
-nav.tabs .in { max-width: 560px; margin: 0 auto; display: grid; grid-template-columns: repeat(5, 1fr); padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px); }
+nav.tabs .in { max-width: 560px; margin: 0 auto; display: grid; grid-template-columns: repeat(6, 1fr); padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px); }
 nav.tabs button { border: 0; border-radius: 0; background: transparent; color: var(--muted); font-size: 11.5px; font-weight: 600; min-height: 60px; padding: 6px 2px; display: grid; justify-items: center; gap: 3px; }
 nav.tabs button svg { width: 22px; height: 22px; }
 nav.tabs button[aria-current="page"] { color: var(--accent); }
+.kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; display: grid; gap: 2px; min-width: 0; }
+.kpi .k { font-size: 12px; color: var(--muted); font-weight: 600; letter-spacing: .02em; }
+.kpi .v { font-size: 20px; font-weight: 700; overflow-wrap: anywhere; }
+.kpi .d { font-size: 12px; color: var(--muted); }
+.kpi.hero { grid-column: 1 / -1; }
+.kpi.hero .v { font-size: 28px; }
+.delta-up { color: var(--ok); } .delta-down { color: var(--danger); }
+.chart { position: relative; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { fill: var(--muted); font-size: 11px; font-family: var(--font-body); }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--bg); border-radius: 8px; padding: 8px 10px; font-size: 12.5px; line-height: 1.4; white-space: nowrap; z-index: 3; transform: translate(-50%, -100%); }
+.tip b { display: block; font-size: 13px; }
+.hbar { display: grid; gap: 4px; }
+.hbar .name { font-size: 13.5px; overflow-wrap: anywhere; }
+.hbar .row2 { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
+.hbar .val { font-size: 13px; white-space: nowrap; color: var(--muted); }
+.hbar .val b { color: var(--ink); }
+.hbar .track { height: 10px; min-width: 0; }
+.hbar .fill { height: 10px; background: var(--s1); border-radius: 0 4px 4px 0; min-width: 2px; }
+table.t { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+table.t th { text-align: left; color: var(--muted); font-weight: 600; font-size: 12px; padding: 6px 4px; border-bottom: 1px solid var(--line); }
+table.t td { padding: 8px 4px; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.t td.r, table.t th.r { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.overdue { color: var(--crit); font-weight: 600; }
 .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(140px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 14px; z-index: 20; max-width: calc(100% - 32px); }
 .search { position: relative; }
 details > summary { cursor: pointer; font-weight: 600; color: var(--accent); min-height: 32px; }
@@ -270,7 +301,7 @@ async function pull(silent) {
   try { const j = await api({ action: "all" }); applyData(j.data); cacheNow(); S.online = true; S.lastSync = new Date(); }
   catch (e) {
     S.online = false;
-    if (e.code === "unauthorized") toast("Kode akses ditolak. Periksa di menu Rekening & Excel → Koneksi.");
+    if (e.code === "unauthorized") toast("Kode akses ditolak. Periksa di menu Lainnya → Koneksi.");
     else if (!silent) toast("Tidak bisa memuat data. Periksa koneksi internet.");
   }
   S.syncing = false; setSync(); softRender();
@@ -356,9 +387,10 @@ const ICONS = {
   riwayat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>',
   pelanggan: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1-3.5 3.8-5 7-5s6 1.5 7 5"/></svg>',
   produk: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 13c-3 0-5-2.5-5-6 2.5 0 4 1 5 2.5C13 8 14.5 7 17 7c0 3.5-2 6-5 6z"/><path d="M12 13v8M12 17c-2 0-3.5-1-4-2.5M12 18.5c2 0 3.5-1 4-2.5"/></svg>',
+  dashboard: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 20h16"/><path d="M7 16v-5M12 16V6M17 16v-8"/></svg>',
   lainnya: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>',
 };
-const TABS = [["buat", "Buat"], ["riwayat", "Riwayat"], ["pelanggan", "Pelanggan"], ["produk", "Produk"], ["lainnya", "Rekening & Excel"]];
+const TABS = [["buat", "Buat"], ["dashboard", "Dashboard"], ["riwayat", "Riwayat"], ["pelanggan", "Pelanggan"], ["produk", "Produk"], ["lainnya", "Lainnya"]];
 
 function renderTabs() {
   $("#tabs").innerHTML = TABS.map(([k, l]) => `<button type="button" data-tab="${k}" ${S.view === k ? 'aria-current="page"' : ""}>${ICONS[k]}<span>${l}</span></button>`).join("");
@@ -368,7 +400,7 @@ function render() {
   const v = $("#view");
   if (!S.cfg) { $("#tabs").innerHTML = ""; v.innerHTML = viewSetup(); $("#stickyTotal").hidden = true; setSync(); return; }
   renderTabs();
-  v.innerHTML = ({ buat: viewBuat, riwayat: viewRiwayat, pelanggan: viewPelanggan, produk: viewProduk, lainnya: viewLainnya }[S.view])();
+  v.innerHTML = ({ buat: viewBuat, dashboard: viewDashboard, riwayat: viewRiwayat, pelanggan: viewPelanggan, produk: viewProduk, lainnya: viewLainnya }[S.view])();
   $("#stickyTotal").hidden = S.view !== "buat";
   if (S.view === "buat") updateTotals();
 }
@@ -437,7 +469,7 @@ function viewBuat() {
           <option value="__new">+ Tambah pelanggan baru</option>
         </select>
       </label>
-      ${d.customerId === "__new" ? customerForm({}, "inline") : cust ? `<div class="billto"><b>${esc(cust.name)}</b>${esc(cust.address || "")}${cust.phone ? "<br>" + esc(cust.phone) : ""}${cust.email ? "<br>" + esc(cust.email) : ""}</div>` : S.customers.length ? "" : '<div class="muted small">Belum ada pelanggan. Pilih “+ Tambah pelanggan baru”, atau impor dari Excel di menu Rekening &amp; Excel.</div>'}
+      ${d.customerId === "__new" ? customerForm({}, "inline") : cust ? `<div class="billto"><b>${esc(cust.name)}</b>${esc(cust.address || "")}${cust.phone ? "<br>" + esc(cust.phone) : ""}${cust.email ? "<br>" + esc(cust.email) : ""}</div>` : S.customers.length ? "" : '<div class="muted small">Belum ada pelanggan. Pilih “+ Tambah pelanggan baru”, atau impor dari Excel di menu Lainnya.</div>'}
     </section>
 
     <section class="card">
@@ -462,7 +494,7 @@ function viewBuat() {
       ${accs.length ? `
       <label class="f">Rekening 1<select id="fAcc1"><option value="">— Tidak ada —</option>${accs.map((a) => accOption(a, d.acc1)).join("")}</select></label>
       <label class="f">Rekening 2<select id="fAcc2"><option value="">— Tidak ada —</option>${accs.map((a) => accOption(a, d.acc2)).join("")}</select></label>
-      <div class="muted small">Pilih sesuai bank pelanggan agar transfer lebih mudah.</div>` : '<div class="muted small">Belum ada rekening. Tambahkan di menu Rekening &amp; Excel.</div>'}
+      <div class="muted small">Pilih sesuai bank pelanggan agar transfer lebih mudah.</div>` : '<div class="muted small">Belum ada rekening. Tambahkan di menu Lainnya.</div>'}
     </section>
 
     <section class="card">
@@ -561,7 +593,7 @@ function viewPelanggan() {
           <button type="button" class="sm primary" data-act="invFor" data-id="${esc(c.id)}">Buat invoice</button>
           <button type="button" class="sm" data-act="editCustomer" data-id="${esc(c.id)}">Ubah</button>
           ${S.confirmDelete === c.id ? `<button type="button" class="sm danger" data-act="delCustYes" data-id="${esc(c.id)}">Yakin hapus?</button><button type="button" class="sm" data-act="cancelDel">Batal</button>` : `<button type="button" class="sm ghost" data-act="delCust" data-id="${esc(c.id)}">Hapus</button>`}
-        </div></div>`).join("") : `<div class="empty">${S.customers.length ? "Tidak ada yang cocok." : "Belum ada pelanggan. Tambahkan satu per satu saat ada pesanan, atau impor sekaligus dari Excel di menu <b>Rekening &amp; Excel</b>."}</div>`}
+        </div></div>`).join("") : `<div class="empty">${S.customers.length ? "Tidak ada yang cocok." : "Belum ada pelanggan. Tambahkan satu per satu saat ada pesanan, atau impor sekaligus dari Excel di menu <b>Lainnya</b>."}</div>`}
     </div>
   </div>`;
 }
@@ -661,6 +693,168 @@ function viewLainnya() {
       ${S.confirmDelete === "__disconnect" ? '<div class="row"><button type="button" class="danger" data-act="disconnectYes">Ya, putuskan</button><button type="button" data-act="cancelDel">Batal</button></div>' : '<button type="button" class="ghost" data-act="disconnect">Putuskan koneksi di HP ini</button>'}
     </section>
   </div>`;
+}
+
+/* ---------- Dashboard ---------- */
+const BLN = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+const ym = (iso) => String(iso || "").slice(0, 7);
+const ymLabel = (k, long) => { const [y, m] = k.split("-").map(Number); return (long ? BULAN[m - 1] : BLN[m - 1]) + " " + y; };
+const ymShift = (k, n) => { let [y, m] = k.split("-").map(Number); m += n; while (m < 1) { m += 12; y--; } while (m > 12) { m -= 12; y++; } return `${y}-${String(m).padStart(2, "0")}`; };
+const rpShort = (n) => n >= 1e9 ? (n / 1e9).toLocaleString("id-ID", { maximumFractionDigits: 1 }) + " M" : n >= 1e6 ? (n / 1e6).toLocaleString("id-ID", { maximumFractionDigits: 1 }) + " jt" : n >= 1e3 ? Math.round(n / 1e3).toLocaleString("id-ID") + " rb" : String(Math.round(n));
+const paid = (r) => r.status === "Lunas";
+
+function periodOf(key) {
+  const now = ym(todayISO());
+  if (key === "this") return { label: "Bulan ini · " + ymLabel(now, true), test: (r) => ym(r.date) === now, prev: (r) => ym(r.date) === ymShift(now, -1), prevLabel: ymLabel(ymShift(now, -1), true) };
+  if (key === "last") { const m = ymShift(now, -1); return { label: "Bulan lalu · " + ymLabel(m, true), test: (r) => ym(r.date) === m, prev: (r) => ym(r.date) === ymShift(m, -1), prevLabel: ymLabel(ymShift(m, -1), true) }; }
+  if (key === "year") { const y = now.slice(0, 4); return { label: "Tahun " + y, test: (r) => String(r.date).startsWith(y), prev: (r) => String(r.date).startsWith(String(+y - 1)), prevLabel: "tahun " + (+y - 1) }; }
+  if (key && key.startsWith("m:")) { const m = key.slice(2); return { label: ymLabel(m, true), test: (r) => ym(r.date) === m, prev: (r) => ym(r.date) === ymShift(m, -1), prevLabel: ymLabel(ymShift(m, -1), true) }; }
+  return { label: "Semua waktu", test: () => true, prev: null };
+}
+
+function dashData() {
+  const P = periodOf(S.dashPeriod || "this");
+  const all = S.invoices.filter((r) => r.date && Number(r.total) >= 0);
+  const rows = all.filter(P.test);
+  const sum = (a) => a.reduce((t, r) => t + (Number(r.total) || 0), 0);
+  const omzet = sum(rows), lunas = sum(rows.filter(paid)), piutang = omzet - lunas;
+  const prevOmzet = P.prev ? sum(all.filter(P.prev)) : null;
+  // products: by productId when present, else by description
+  const prod = new Map();
+  rows.forEach((r) => (r.items || []).forEach((it) => {
+    const key = it.productId || it.desc; const p = S.products.find((x) => x.id === it.productId);
+    const o = prod.get(key) || { name: p ? p.name : it.desc, qty: 0, total: 0 };
+    o.qty += Number(it.qty) || 0; o.total += (Number(it.qty) || 0) * (Number(it.price) || 0); prod.set(key, o);
+  }));
+  const cust = new Map();
+  rows.forEach((r) => { const k = r.customerId || r.customer?.name; const o = cust.get(k) || { name: r.customer?.name || "Tanpa nama", n: 0, total: 0, unpaid: 0 }; o.n++; o.total += Number(r.total) || 0; if (!paid(r)) o.unpaid += Number(r.total) || 0; cust.set(k, o); });
+  // last 12 months ending at the newer of today or the latest invoice
+  const latest = all.reduce((m, r) => (ym(r.date) > m ? ym(r.date) : m), ym(todayISO()));
+  const months = Array.from({ length: 12 }, (_, i) => ymShift(latest, i - 11)).map((k) => {
+    const rs = all.filter((r) => ym(r.date) === k);
+    return { k, lunas: sum(rs.filter(paid)), belum: sum(rs.filter((r) => !paid(r))), n: rs.length };
+  });
+  const today = todayISO();
+  const unpaid = all.filter((r) => !paid(r)).sort((a, b) => String(a.due).localeCompare(String(b.due)));
+  return { P, rows, omzet, lunas, piutang, prevOmzet, months, unpaid, today,
+    products: [...prod.values()].sort((a, b) => b.total - a.total), customers: [...cust.values()].sort((a, b) => b.total - a.total) };
+}
+
+function niceMax(v) { if (v <= 0) return 1e6; const e = Math.pow(10, Math.floor(Math.log10(v))); for (const m of [1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10]) if (m * e >= v) return m * e; return 10 * e; }
+
+function monthChart(months, width) {
+  const W = Math.max(300, Math.round(width)), H = 210, L = 44, Rr = 6, T = 26, B = 24;
+  const max = niceMax(Math.max(...months.map((m) => m.lunas + m.belum)));
+  const pw = W - L - Rr, ph = H - T - B, bw = pw / months.length, bar = Math.min(22, bw * 0.62);
+  const y = (v) => T + ph - (v / max) * ph;
+  let g = "";
+  for (let i = 0; i <= 4; i++) { const v = (max / 4) * i, yy = y(v); g += `<line x1="${L}" x2="${W - Rr}" y1="${yy}" y2="${yy}" stroke="var(--${i ? "grid" : "axis"})" stroke-width="1"/><text x="${L - 6}" y="${yy + 4}" text-anchor="end">${i ? rpShort(v) : "0"}</text>`; }
+  const peak = months.reduce((a, m, i) => (m.lunas + m.belum > months[a].lunas + months[a].belum ? i : a), 0);
+  months.forEach((m, i) => {
+    const cx = L + bw * i + bw / 2, x = cx - bar / 2, tot = m.lunas + m.belum;
+    const yl = y(m.lunas), yt = y(tot), gap = m.lunas && m.belum ? 2 : 0;
+    const r = Math.min(4, bar / 2);
+    const top = (x0, y0, h) => h <= 0 ? "" : `M${x0},${y0 + h}V${y0 + Math.min(r, h)}Q${x0},${y0} ${x0 + Math.min(r, h)},${y0}H${x0 + bar - Math.min(r, h)}Q${x0 + bar},${y0} ${x0 + bar},${y0 + Math.min(r, h)}V${y0 + h}Z`;
+    if (m.lunas) g += m.belum ? `<rect x="${x}" y="${yl}" width="${bar}" height="${y(0) - yl}" fill="var(--s1)"/>` : `<path d="${top(x, yl, y(0) - yl)}" fill="var(--s1)"/>`;
+    if (m.belum) g += `<path d="${top(x, yt, Math.max(0, yl - gap - yt))}" fill="var(--s2)"/>`;
+    const lab = i % 2 === months.length % 2 || i === months.length - 1;
+    if (lab) g += `<text x="${cx}" y="${H - 6}" text-anchor="middle">${BLN[+m.k.slice(5) - 1]}${m.k.slice(5) === "01" || i === 0 ? " " + m.k.slice(2, 4) : ""}</text>`;
+    if (tot && (i === months.length - 1 || i === peak)) g += `<text x="${cx}" y="${yt - 6}" text-anchor="middle" style="fill:var(--ink);font-weight:600">${rpShort(tot)}</text>`;
+    g += `<rect data-bar="${i}" x="${L + bw * i}" y="${T - 20}" width="${bw}" height="${ph + 20}" fill="transparent" style="cursor:pointer"/>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Omzet per bulan, 12 bulan terakhir">${g}</svg>`;
+}
+
+function viewDashboard() {
+  if (!S.invoices.length) return `<div class="stack"><h2>Dashboard</h2><div class="empty">Belum ada invoice. Setelah Anda menyimpan invoice di menu <b>Buat</b>, omzet, piutang, produk terlaris, dan pelanggan teratas akan tampil di sini.</div></div>`;
+  const D = dashData(); S.dash = D;
+  const monthsWithData = [...new Set(S.invoices.map((r) => ym(r.date)).filter(Boolean))].sort().reverse();
+  const opt = (v, l) => `<option value="${v}" ${(S.dashPeriod || "this") === v ? "selected" : ""}>${esc(l)}</option>`;
+  const delta = D.prevOmzet === null ? "" : D.prevOmzet ? (() => { const p = Math.round(((D.omzet - D.prevOmzet) / D.prevOmzet) * 100); return `<span class="${p >= 0 ? "delta-up" : "delta-down"}">${p >= 0 ? "▲" : "▼"} ${Math.abs(p)}%</span> dibanding ${esc(D.P.prevLabel)}`; })() : `${esc(D.P.prevLabel)}: belum ada data`;
+  const unpaidN = D.rows.filter((r) => !paid(r)).length;
+  const topP = D.products.slice(0, 6), maxP = Math.max(1, ...topP.map((p) => p.total));
+  const overdue = D.unpaid.filter((r) => r.due && r.due < D.today);
+  const days = (a, b) => Math.round((new Date(b + "T00:00:00") - new Date(a + "T00:00:00")) / 864e5);
+  return `
+  <div class="stack">
+    <h2>Dashboard</h2>
+    <label class="f">Periode
+      <select id="dPeriod">
+        ${opt("this", "Bulan ini")}${opt("last", "Bulan lalu")}${opt("year", "Tahun ini")}
+        ${monthsWithData.map((m) => opt("m:" + m, ymLabel(m, true))).join("")}
+        ${opt("all", "Semua waktu")}
+      </select>
+    </label>
+
+    <div class="kpis">
+      <div class="kpi hero"><span class="k">Omzet · ${esc(D.P.label)}</span><span class="v num">${rp(D.omzet)}</span><span class="d">${delta}</span></div>
+      <div class="kpi"><span class="k">Sudah dibayar</span><span class="v num">${rp(D.lunas)}</span><span class="d">${D.rows.length - unpaidN} invoice lunas</span></div>
+      <div class="kpi"><span class="k">Belum dibayar</span><span class="v num">${rp(D.piutang)}</span><span class="d">${unpaidN} invoice</span></div>
+      <div class="kpi"><span class="k">Jumlah invoice</span><span class="v num">${D.rows.length}</span><span class="d">${D.customers.length} pelanggan</span></div>
+      <div class="kpi"><span class="k">Rata-rata per invoice</span><span class="v num">${rp(D.rows.length ? D.omzet / D.rows.length : 0)}</span><span class="d">nilai pesanan</span></div>
+    </div>
+
+    <section class="card">
+      <h3>Omzet per bulan · 12 bulan terakhir</h3>
+      <div class="legend"><span><i style="background:var(--s1)"></i>Lunas</span><span><i style="background:var(--s2)"></i>Belum lunas</span></div>
+      <div class="chart" id="monthChart">${monthChart(D.months, Math.min(528, (document.querySelector("#view")?.clientWidth || 358) - 30))}<div class="tip" id="tip" hidden></div></div>
+      <details><summary class="small">Lihat sebagai tabel</summary>
+        <div style="overflow-x:auto"><table class="t"><thead><tr><th>Bulan</th><th class="r">Lunas</th><th class="r">Belum lunas</th><th class="r">Total</th></tr></thead>
+        <tbody>${[...D.months].reverse().map((m) => `<tr><td>${ymLabel(m.k, true)}</td><td class="r">${rp(m.lunas)}</td><td class="r">${rp(m.belum)}</td><td class="r"><b>${rp(m.lunas + m.belum)}</b></td></tr>`).join("")}</tbody></table></div>
+      </details>
+    </section>
+
+    <section class="card">
+      <h3>Produk terlaris · ${esc(D.P.label)}</h3>
+      ${topP.length ? topP.map((p) => `<div class="hbar"><div class="name">${esc(p.name)}</div><div class="row2"><div class="track"><div class="fill" style="width:${Math.max(1, (p.total / maxP) * 100)}%"></div></div><span class="val num"><b>${rp(p.total)}</b> · ${p.qty.toLocaleString("id-ID")} terjual</span></div></div>`).join("") : '<div class="muted small">Tidak ada penjualan di periode ini.</div>'}
+    </section>
+
+    <section class="card">
+      <h3>Pelanggan teratas · ${esc(D.P.label)}</h3>
+      ${D.customers.length ? `<div style="overflow-x:auto"><table class="t"><thead><tr><th>Pelanggan</th><th class="r">Invoice</th><th class="r">Total</th></tr></thead><tbody>
+        ${D.customers.slice(0, 5).map((c) => `<tr><td>${esc(c.name)}${c.unpaid ? `<div class="small muted">belum dibayar ${rp(c.unpaid)}</div>` : ""}</td><td class="r">${c.n}</td><td class="r"><b>${rp(c.total)}</b></td></tr>`).join("")}
+      </tbody></table></div>` : '<div class="muted small">Tidak ada invoice di periode ini.</div>'}
+    </section>
+
+    <section class="card">
+      <h3>Piutang · semua invoice belum lunas</h3>
+      ${D.unpaid.length ? `<div class="small">${D.unpaid.length} invoice · total <b class="num">${rp(D.unpaid.reduce((t, r) => t + (Number(r.total) || 0), 0))}</b>${overdue.length ? ` · <span class="overdue">⚠ ${overdue.length} lewat jatuh tempo</span>` : ""}</div>
+      <div style="overflow-x:auto"><table class="t"><thead><tr><th>Pelanggan</th><th>Jatuh tempo</th><th class="r">Total</th></tr></thead><tbody>
+        ${D.unpaid.slice(0, 10).map((r) => { const late = r.due && r.due < D.today; return `<tr><td>${esc(r.customer?.name || "")}<div class="small muted">${esc(r.number)}</div></td><td>${late ? `<span class="overdue">⚠ Terlambat ${days(r.due, D.today)} hari</span>` : esc(tglID(r.due))}</td><td class="r"><b>${rp(r.total)}</b></td></tr>`; }).join("")}
+      </tbody></table></div>
+      ${D.unpaid.length > 10 ? `<div class="small muted">dan ${D.unpaid.length - 10} lainnya — lihat menu Riwayat → Belum lunas.</div>` : ""}` : '<div class="banner ok">Tidak ada piutang. Semua invoice sudah lunas.</div>'}
+    </section>
+
+    <button type="button" class="primary" data-act="dashExport">Unduh rekap Excel · ${esc(D.P.label)}</button>
+  </div>`;
+}
+
+function showTip(i) {
+  const D = S.dash, tip = $("#tip"), box = $("#monthChart"); if (!D || !tip || !box) return;
+  const m = D.months[i]; const svg = box.querySelector("svg"); const vb = svg.viewBox.baseVal; const sc = svg.clientWidth / vb.width;
+  const hit = svg.querySelector(`[data-bar="${i}"]`); const cx = (+hit.getAttribute("x") + +hit.getAttribute("width") / 2) * sc;
+  tip.innerHTML = `<b>${ymLabel(m.k, true)}</b>Total ${rp(m.lunas + m.belum)}<br>Lunas ${rp(m.lunas)}<br>Belum lunas ${rp(m.belum)}<br>${m.n} invoice`;
+  tip.hidden = false;
+  const half = tip.offsetWidth / 2, x = Math.max(half, Math.min(box.clientWidth - half, cx));
+  tip.style.left = x + "px"; tip.style.top = "18px";
+}
+document.addEventListener("pointerover", (e) => { const b = e.target.closest && e.target.closest("[data-bar]"); if (b) showTip(+b.dataset.bar); });
+document.addEventListener("pointerout", (e) => { if (e.target.closest && e.target.closest("[data-bar]") && e.pointerType === "mouse") { const t = $("#tip"); if (t) t.hidden = true; } });
+document.addEventListener("click", (e) => { const b = e.target.closest && e.target.closest("[data-bar]"); if (b) showTip(+b.dataset.bar); else if (!e.target.closest || !e.target.closest("#monthChart")) { const t = $("#tip"); if (t) t.hidden = true; } });
+let dashResize; window.addEventListener("resize", () => { clearTimeout(dashResize); dashResize = setTimeout(() => { if (S.view === "dashboard") softRender(); }, 200); });
+
+function dashExport() {
+  if (!window.XLSX) { toast("Pembuat Excel belum termuat. Sambungkan internet lalu buka ulang aplikasi."); return; }
+  const D = dashData(), wb = XLSX.utils.book_new();
+  const sheet = (name, rows, widths) => { const ws = XLSX.utils.aoa_to_sheet(rows); ws["!cols"] = widths.map((w) => ({ wch: w })); XLSX.utils.book_append_sheet(wb, ws, name); };
+  sheet("Ringkasan", [["Rekap Galeri Florist", D.P.label], [], ["Omzet (Rp)", D.omzet], ["Sudah dibayar (Rp)", D.lunas], ["Belum dibayar (Rp)", D.piutang], ["Jumlah invoice", D.rows.length], ["Jumlah pelanggan", D.customers.length], ["Rata-rata per invoice (Rp)", D.rows.length ? Math.round(D.omzet / D.rows.length) : 0], [], ["Dibuat", tglID(todayISO())]], [28, 24]);
+  sheet("Invoice", [["No. Invoice", "Tanggal", "Jatuh Tempo", "Pelanggan", "Total (Rp)", "Status"], ...[...D.rows].sort((a, b) => String(a.date).localeCompare(String(b.date))).map((r) => [r.number, r.date, r.due, r.customer?.name || "", Number(r.total) || 0, r.status || "Belum Lunas"])], [16, 12, 12, 28, 14, 12]);
+  sheet("Produk", [["Produk", "Terjual", "Omzet (Rp)"], ...D.products.map((p) => [p.name, p.qty, p.total])], [40, 10, 16]);
+  sheet("Pelanggan", [["Pelanggan", "Invoice", "Total (Rp)", "Belum dibayar (Rp)"], ...D.customers.map((c) => [c.name, c.n, c.total, c.unpaid])], [32, 10, 16, 18]);
+  sheet("Per Bulan", [["Bulan", "Lunas (Rp)", "Belum lunas (Rp)", "Total (Rp)", "Invoice"], ...D.months.map((m) => [ymLabel(m.k, true), m.lunas, m.belum, m.lunas + m.belum, m.n])], [18, 14, 16, 14, 10]);
+  const out = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+  downloadBlob(new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), fileSafe(`Rekap Galeri Florist - ${D.P.label.replace(/·/g, "-")}`) + ".xlsx");
+  toast("Rekap Excel tersimpan di folder Download.");
 }
 
 /* ---------- PDF ---------- */
@@ -983,6 +1177,7 @@ document.addEventListener("click", async (e) => {
       break; }
     case "hFilter": S.histFilter = b.dataset.k; render(); break;
     case "dateToday": d.date = todayISO(); d.dateTouched = false; if (!S.numberTouched && !d.editingId) d.number = nextInvoiceNumber(d.date); saveDraftLocal(); render(); break;
+    case "dashExport": dashExport(); break;
     case "setStatus": d.status = b.dataset.k; saveDraftLocal(); render(); break;
     case "closeSaved": S.lastSaved = null; render(); break;
     case "pdf": { const r = S.invoices.find((x) => x.id === id); if (r) await savePdf(r, "share"); break; }
@@ -1038,6 +1233,7 @@ document.addEventListener("input", (e) => {
 document.addEventListener("change", (e) => {
   const t = e.target, d = S.draft;
   if (t.id === "xlsFile" && t.files && t.files[0]) { readExcel(t.files[0]); t.value = ""; return; }
+  if (t.id === "dPeriod") { S.dashPeriod = t.value; render(); return; }
   if (S.view !== "buat") return;
   if (t.dataset.f === "productId") {
     const it = d.items[+t.dataset.i]; it.productId = t.value;
