@@ -244,9 +244,23 @@ async function api(payload) {
   if (!j.ok) { const e = new Error(j.error || "error"); e.code = j.error; throw e; }
   return j;
 }
+// Google Sheets turns typed phone/account numbers into numbers (and drops a leading 0); keep them as text.
+const txt = (v) => (v === null || v === undefined ? "" : String(v));
+const phoneTxt = (v) => { const s = txt(v).trim(); return typeof v === "number" && /^[1-9]\d{7,12}$/.test(s) && s[0] === "8" ? "0" + s : s; };
+function normCustomer(c) { return { ...c, code: txt(c.code), name: txt(c.name), address: txt(c.address), phone: phoneTxt(c.phone), email: txt(c.email) }; }
+function normInvoice(r) {
+  return { ...r, number: txt(r.number), date: txt(r.date), due: txt(r.due),
+    customer: normCustomer(r.customer || {}),
+    items: (r.items || []).map((it) => ({ ...it, desc: txt(it.desc), unit: txt(it.unit), qty: Number(it.qty) || 0, price: Number(it.price) || 0 })),
+    accounts: (r.accounts || []).map((a) => ({ bank: txt(a.bank), number: txt(a.number), holder: txt(a.holder) })), note: txt(r.note) };
+}
 function applyData(d) {
-  S.customers = d.customers || []; S.products = d.products || []; S.accounts = d.accounts || []; S.invoices = d.invoices || [];
-  S.biz = { ...DEFAULT_BIZ, ...(d.biz || {}) };
+  S.customers = (d.customers || []).map(normCustomer);
+  S.products = (d.products || []).map((p) => ({ ...p, code: txt(p.code), name: txt(p.name), unit: txt(p.unit), price: Number(p.price) || 0 }));
+  S.accounts = (d.accounts || []).map((a) => ({ ...a, bank: txt(a.bank), number: txt(a.number), holder: txt(a.holder) }));
+  S.invoices = (d.invoices || []).map(normInvoice);
+  const b = { ...DEFAULT_BIZ, ...(d.biz || {}) };
+  S.biz = { ...b, name: txt(b.name), address1: txt(b.address1), address2: txt(b.address2), phone: phoneTxt(b.phone), email: txt(b.email), notes: txt(b.notes) };
   if (S.draft && !S.numberTouched && !S.draft.editingId) S.draft.number = nextInvoiceNumber(S.draft.date);
 }
 function cacheNow() { lsSet(CACHE_KEY, { customers: S.customers, products: S.products, accounts: S.accounts, invoices: S.invoices, biz: S.biz, at: Date.now() }); }
@@ -666,6 +680,7 @@ function invoiceFromDraft() {
 }
 
 function buildPdf(inv) {
+  inv = normInvoice(inv);
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const W = 210, M = 16, R = W - M;

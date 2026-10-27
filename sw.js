@@ -1,5 +1,5 @@
 // Offline shell for Invoice Galeri Florist. Data calls to Google Apps Script always go to the network.
-const CACHE = "gf-v3";
+const CACHE = "gf-v4";
 const SHELL = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png"];
 const LIBS = [
   "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
