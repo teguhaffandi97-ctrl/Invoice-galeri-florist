@@ -290,7 +290,7 @@ function applyData(d) {
   S.products = (d.products || []).map((p) => ({ ...p, code: txt(p.code), name: txt(p.name), unit: txt(p.unit), price: Number(p.price) || 0 }));
   S.accounts = (d.accounts || []).map((a) => ({ ...a, bank: txt(a.bank), number: txt(a.number), holder: txt(a.holder) }));
   S.invoices = (d.invoices || []).map(normInvoice);
-  S.cash = (d.cash || []).map((c) => ({ ...c, date: txt(c.date), type: c.type === "Keluar" ? "Keluar" : "Masuk", category: txt(c.category), note: txt(c.note), method: txt(c.method), amount: Number(c.amount) || 0 }));
+  S.cash = (d.cash || []).map((c) => ({ ...c, date: txt(c.date), type: c.type === "Keluar" ? "Keluar" : "Masuk", category: txt(c.category), note: txt(c.note), method: txt(c.method), arranger: txt(c.arranger), amount: Number(c.amount) || 0 }));
   S.cashSupported = Array.isArray(d.cash);
   const b = { ...DEFAULT_BIZ, ...(d.biz || {}) };
   S.biz = { ...b, name: txt(b.name), address1: txt(b.address1), address2: txt(b.address2), phone: phoneTxt(b.phone), email: txt(b.email), notes: txt(b.notes) };
@@ -871,7 +871,7 @@ function dashExport() {
 /* ---------- Kas (uang masuk & keluar) ---------- */
 const KAS_CAT = {
   Masuk: ["Penjualan tanpa invoice", "Uang muka / DP", "Modal", "Lainnya"],
-  Keluar: ["Bunga & bahan", "Gaji karyawan", "Transport & pengiriman", "Sewa tempat", "Listrik, air & internet", "Peralatan", "Pajak", "Lainnya"],
+  Keluar: ["Upah perangkai", "Bunga & bahan", "Gaji karyawan", "Transport & pengiriman", "Sewa tempat", "Listrik, air & internet", "Peralatan", "Pajak", "Lainnya"],
 };
 const localDate = (iso) => { const d = new Date(iso); return isNaN(d) ? "" : new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
 function cashEntries() {
@@ -888,7 +888,8 @@ function kasData() {
   const cats = new Map(); rows.filter((c) => c.type === "Keluar").forEach((c) => cats.set(c.category || "Lainnya", (cats.get(c.category || "Lainnya") || 0) + c.amount));
   const latest = all.reduce((m, c) => (ym(c.date) > m ? ym(c.date) : m), ym(todayISO()));
   const months = Array.from({ length: 6 }, (_, i) => ymShift(latest, i - 5)).map((k) => { const rs = all.filter((c) => ym(c.date) === k); return { k, masuk: sum(rs.filter((c) => c.type === "Masuk")), keluar: sum(rs.filter((c) => c.type === "Keluar")) }; });
-  return { P, rows, masuk, keluar, saldo: masuk - keluar, cats: [...cats.entries()].map(([name, total]) => ({ name, total })).sort((a, b) => b.total - a.total), months };
+  const arr = new Map(); rows.filter((c) => c.type === "Keluar" && c.arranger).forEach((c) => { const o = arr.get(c.arranger) || { name: c.arranger, n: 0, total: 0 }; o.n++; o.total += c.amount; arr.set(c.arranger, o); });
+  return { P, rows, masuk, keluar, saldo: masuk - keluar, arrangers: [...arr.values()].sort((a, b) => b.total - a.total), cats: [...cats.entries()].map(([name, total]) => ({ name, total })).sort((a, b) => b.total - a.total), months };
 }
 
 function kasChart(months, width) {
@@ -912,7 +913,10 @@ function kasForm(c) {
   const type = c.type || "Masuk";
   const cats = KAS_CAT[type];
   const custom = c.category && !cats.includes(c.category);
-  const methods = ["Tunai", ...sortedBy(S.accounts, "order").map((a) => `${a.bank} ${a.number}`)];
+  const banks = sortedBy(S.accounts, "order").map((a) => `${a.bank} ${a.number}`);
+  const methods = type === "Keluar" ? ["Seabank", "Tunai", ...banks] : ["Tunai", ...banks, "Seabank"];
+  const method = c.method || methods[0];
+  const names = [...new Set(S.cash.map((x) => x.arranger).filter(Boolean))].sort();
   return `<section class="card" id="kasForm" data-id="${esc(c.id || "")}">
     <h3>${c.id ? "Ubah catatan" : type === "Masuk" ? "Uang masuk baru" : "Uang keluar baru"}</h3>
     <div class="seg">${["Masuk", "Keluar"].map((t) => `<button type="button" data-act="kasType" data-k="${t}" aria-pressed="${type === t}">Uang ${t.toLowerCase()}</button>`).join("")}</div>
@@ -921,7 +925,9 @@ function kasForm(c) {
       <label class="f">Jumlah (Rp)<input id="kAmount" class="num" inputmode="numeric" placeholder="0" value="${c.amount ? Number(c.amount).toLocaleString("id-ID") : ""}"></label>
     </div>
     <label class="f">Kategori<select id="kCat">${cats.map((x) => `<option ${x === (custom ? "Lainnya" : c.category) ? "selected" : ""}>${esc(x)}</option>`).join("")}</select></label>
-    <label class="f">Metode<select id="kMethod">${methods.map((m) => `<option ${m === c.method ? "selected" : ""}>${esc(m)}</option>`).join("")}</select></label>
+    ${type === "Keluar" ? `<label class="f">Nama perangkai<input id="kArranger" list="arrangerList" value="${esc(c.arranger || "")}" placeholder="Ketik nama perangkai (boleh kosong)"></label>
+    <datalist id="arrangerList">${names.map((n) => `<option value="${esc(n)}"></option>`).join("")}</datalist>` : ""}
+    <label class="f">${type === "Keluar" ? "Transfer dari" : "Diterima di"}<select id="kMethod">${(methods.includes(method) ? methods : [method, ...methods]).map((m) => `<option ${m === method ? "selected" : ""}>${esc(m)}</option>`).join("")}</select></label>
     <label class="f">Keterangan<input id="kNote" value="${esc(c.note || "")}" placeholder="${type === "Masuk" ? "mis. Jual buket di toko" : "mis. Beli mawar 5 ikat di pasar"}"></label>
     <div class="row"><button type="button" class="primary" data-act="kasSave">Simpan</button><button type="button" data-act="cancelEdit">Batal</button></div>
   </section>`;
@@ -963,11 +969,19 @@ function viewKas() {
       ${K.cats.length ? K.cats.map((c) => `<div class="hbar"><div class="name">${esc(c.name)}</div><div class="row2"><div class="track"><div class="fill" style="background:var(--s2);width:${Math.max(1, (c.total / maxC) * 100)}%"></div></div><span class="val num"><b>${rp(c.total)}</b> · ${K.keluar ? Math.round((c.total / K.keluar) * 100) : 0}%</span></div></div>`).join("") : '<div class="muted small">Belum ada uang keluar di periode ini.</div>'}
     </section>
 
+    ${K.arrangers.length ? `<section class="card">
+      <h3>Pembayaran ke perangkai · ${esc(K.P.label)}</h3>
+      <div style="overflow-x:auto"><table class="t"><thead><tr><th>Nama perangkai</th><th class="r">Transaksi</th><th class="r">Jumlah</th></tr></thead><tbody>
+        ${K.arrangers.map((a) => `<tr><td>${esc(a.name)}</td><td class="r">${a.n}</td><td class="r"><b>${rp(a.total)}</b></td></tr>`).join("")}
+      </tbody></table></div>
+    </section>` : ""}
+
     <section class="card">
       <h3>Transaksi · ${esc(K.P.label)}</h3>
       ${K.rows.length ? `<div class="list">${K.rows.map((c) => `<div class="li">
         <div class="li-top"><b>${esc(c.category || "Lainnya")}</b><span class="num" style="font-weight:700">${c.type === "Keluar" ? "− " : "+ "}${rp(c.amount)}</span></div>
-        <div class="small muted">${esc(tglID(c.date))}${c.method ? " · " + esc(c.method) : ""}${c.note ? " · " + esc(c.note) : ""}</div>
+        <div class="small muted">${esc(tglID(c.date))}${c.method ? " · " + (c.type === "Keluar" ? "dari " : "") + esc(c.method) : ""}${c.note ? " · " + esc(c.note) : ""}</div>
+        ${c.arranger ? `<div class="small">Perangkai: <b>${esc(c.arranger)}</b></div>` : ""}
         ${c.auto ? '<div class="small muted">Otomatis dari invoice lunas</div>' : `<div class="li-actions"><button type="button" class="sm" data-act="kasEdit" data-id="${esc(c.id)}">Ubah</button>${S.confirmDelete === c.id ? `<button type="button" class="sm danger" data-act="kasDelYes" data-id="${esc(c.id)}">Yakin hapus?</button><button type="button" class="sm" data-act="cancelDel">Batal</button>` : `<button type="button" class="sm ghost" data-act="kasDel" data-id="${esc(c.id)}">Hapus</button>`}</div>`}
       </div>`).join("")}</div>` : `<div class="empty">Belum ada transaksi di periode ini. Catat pembelian bunga, gaji, ongkos kirim, dan pemasukan tanpa invoice dengan tombol di atas. Invoice yang ditandai <b>Lunas</b> otomatis masuk ke sini.</div>`}
     </section>
@@ -991,7 +1005,8 @@ function kasExport() {
   const K = kasData(), wb = XLSX.utils.book_new();
   const sheet = (name, rows, widths) => { const ws = XLSX.utils.aoa_to_sheet(rows); ws["!cols"] = widths.map((w) => ({ wch: w })); XLSX.utils.book_append_sheet(wb, ws, name); };
   sheet("Ringkasan", [["Laporan Kas Galeri Florist", K.P.label], [], ["Uang masuk (Rp)", K.masuk], ["Uang keluar (Rp)", K.keluar], ["Saldo (Rp)", K.saldo], [], ["Dibuat", tglID(todayISO())]], [24, 26]);
-  sheet("Transaksi", [["Tanggal", "Jenis", "Kategori", "Jumlah (Rp)", "Metode", "Keterangan"], ...[...K.rows].reverse().map((c) => [c.date, c.type, c.category, c.type === "Keluar" ? -c.amount : c.amount, c.method || "", c.note || ""])], [12, 8, 24, 14, 22, 40]);
+  sheet("Transaksi", [["Tanggal", "Jenis", "Kategori", "Jumlah (Rp)", "Nama Perangkai", "Transfer dari / Diterima di", "Keterangan"], ...[...K.rows].reverse().map((c) => [c.date, c.type, c.category, c.type === "Keluar" ? -c.amount : c.amount, c.arranger || "", c.method || "", c.note || ""])], [12, 8, 24, 14, 20, 24, 40]);
+  if (K.arrangers.length) sheet("Per Perangkai", [["Nama Perangkai", "Transaksi", "Jumlah (Rp)"], ...K.arrangers.map((a) => [a.name, a.n, a.total])], [24, 10, 14]);
   sheet("Per Kategori", [["Kategori pengeluaran", "Jumlah (Rp)"], ...K.cats.map((c) => [c.name, c.total])], [28, 14]);
   const out = XLSX.write(wb, { bookType: "xlsx", type: "array" });
   downloadBlob(new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), fileSafe(`Laporan Kas Galeri Florist - ${K.P.label.replace(/·/g, "-")}`) + ".xlsx");
@@ -1323,12 +1338,12 @@ document.addEventListener("click", async (e) => {
     case "goLainnya": case "goKas": S.view = act === "goKas" ? "kas" : "lainnya"; S.editing = null; render(); window.scrollTo(0, 0); break;
     case "kasNew": S.editing = { kind: "cash", id: null, type: b.dataset.k }; render(); $("#kAmount")?.focus(); break;
     case "kasEdit": S.editing = { kind: "cash", id }; S.confirmDelete = null; render(); $("#kasForm")?.scrollIntoView({ block: "start" }); break;
-    case "kasType": S.editing.draft = { type: b.dataset.k, date: $("#kDate").value, amount: num($("#kAmount").value), note: $("#kNote").value, method: $("#kMethod").value }; render(); break;
+    case "kasType": S.editing.draft = { type: b.dataset.k, date: $("#kDate").value, amount: num($("#kAmount").value), note: $("#kNote").value, arranger: $("#kArranger")?.value || "", method: "" }; render(); break;
     case "kasSave": {
       const amount = num($("#kAmount").value); if (!amount) { toast("Isi jumlah uangnya."); $("#kAmount").focus(); return; }
       const cid = $("#kasForm").dataset.id || uid(); const old = S.cash.find((x) => x.id === cid) || {};
       const type = (S.editing.draft && S.editing.draft.type) || old.type || S.editing.type || "Masuk";
-      const data = { date: $("#kDate").value || todayISO(), type, category: $("#kCat").value, amount, note: $("#kNote").value.trim(), method: $("#kMethod").value, createdAt: old.createdAt || new Date().toISOString() };
+      const data = { date: $("#kDate").value || todayISO(), type, category: $("#kCat").value, amount, note: $("#kNote").value.trim(), method: $("#kMethod").value, arranger: type === "Keluar" ? ($("#kArranger")?.value || "").trim() : "", createdAt: old.createdAt || new Date().toISOString() };
       await go(async () => { await put("cash", cid, data); S.editing = null; toast(type === "Masuk" ? "Uang masuk tercatat." : "Uang keluar tercatat."); render(); });
       break; }
     case "kasDel": S.confirmDelete = id; render(); break;
@@ -1391,6 +1406,7 @@ document.addEventListener("change", (e) => {
   if (t.id === "xlsFile" && t.files && t.files[0]) { readExcel(t.files[0]); t.value = ""; return; }
   if (t.id === "dPeriod") { S.dashPeriod = t.value; render(); return; }
   if (t.id === "kPeriod") { S.kasPeriod = t.value; render(); return; }
+  if (t.id === "kAmount") { const n = num(t.value); t.value = n ? n.toLocaleString("id-ID") : ""; return; }
   if (S.view !== "buat") return;
   if (t.dataset.f === "productId") {
     const it = d.items[+t.dataset.i]; it.productId = t.value;
