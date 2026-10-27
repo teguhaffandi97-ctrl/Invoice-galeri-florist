@@ -422,10 +422,10 @@ function viewBuat() {
         <label class="f">No. invoice<input id="fNumber" value="${esc(d.number)}"></label>
       </div>
       <div class="row">
-        <label class="f">Tanggal<input id="fDate" type="date" value="${esc(d.date)}"></label>
-        <label class="f">Jatuh tempo (hari)<input id="fDue" class="num" inputmode="numeric" value="${esc(d.dueDays)}"></label>
+        <label class="f">Tanggal invoice<input id="fDate" type="date" value="${esc(d.date)}"></label>
+        <label class="f">Jatuh tempo<input id="fDueDate" type="date" value="${esc(addDays(d.date, d.dueDays))}"></label>
       </div>
-      <div class="muted small">Jatuh tempo: <span id="dueText">${tglID(addDays(d.date, d.dueDays))}</span></div>
+      <div class="muted small">${tglID(d.date)} → jatuh tempo <span id="dueText">${tglID(addDays(d.date, d.dueDays))}</span> (${esc(d.dueDays)} hari)${!d.editingId && d.date !== todayISO() ? ' · <button type="button" class="ghost sm" data-act="dateToday">Pakai tanggal hari ini</button>' : ""}</div>
     </section>
 
     <section class="card">
@@ -982,6 +982,7 @@ document.addEventListener("click", async (e) => {
       await go(async () => { await put("settings", "business", data); S.biz = { ...DEFAULT_BIZ, ...data }; toast("Info usaha tersimpan."); });
       break; }
     case "hFilter": S.histFilter = b.dataset.k; render(); break;
+    case "dateToday": d.date = todayISO(); d.dateTouched = false; if (!S.numberTouched && !d.editingId) d.number = nextInvoiceNumber(d.date); saveDraftLocal(); render(); break;
     case "setStatus": d.status = b.dataset.k; saveDraftLocal(); render(); break;
     case "closeSaved": S.lastSaved = null; render(); break;
     case "pdf": { const r = S.invoices.find((x) => x.id === id); if (r) await savePdf(r, "share"); break; }
@@ -1045,7 +1046,8 @@ document.addEventListener("change", (e) => {
     saveDraftLocal(); render(); return;
   }
   if (t.dataset.f === "price") { t.value = d.items[+t.dataset.i].price ? Number(d.items[+t.dataset.i].price).toLocaleString("id-ID") : ""; return; }
-  if (t.id === "fDate") { d.date = t.value || todayISO(); if (!S.numberTouched && !d.editingId) d.number = nextInvoiceNumber(d.date); saveDraftLocal(); render(); return; }
+  if (t.id === "fDate") { d.date = t.value || todayISO(); d.dateTouched = d.date !== todayISO(); if (!S.numberTouched && !d.editingId) d.number = nextInvoiceNumber(d.date); saveDraftLocal(); render(); return; }
+  if (t.id === "fDueDate") { if (t.value) d.dueDays = Math.max(0, Math.round((new Date(t.value + "T00:00:00") - new Date(d.date + "T00:00:00")) / 864e5)); saveDraftLocal(); render(); return; }
   if (t.id === "fCustomer") { d.customerId = t.value; saveDraftLocal(); render(); if (t.value === "__new") $("#cName")?.focus(); return; }
   if (t.id === "fAcc1") { d.acc1 = t.value; d.accTouched = true; saveDraftLocal(); return; }
   if (t.id === "fAcc2") { d.acc2 = t.value; d.accTouched = true; saveDraftLocal(); return; }
@@ -1076,7 +1078,13 @@ $("#btnSavePdf").addEventListener("click", async () => {
 /* ---------- boot ---------- */
 window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); S.installEvt = e; softRender(); });
 window.addEventListener("appinstalled", () => { S.installEvt = null; toast("Aplikasi terpasang."); softRender(); });
-document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") pull(true); });
+// A new invoice follows today's date unless the date was picked by hand.
+function rollDraftDate() {
+  const d = S.draft, today = todayISO();
+  if (!d || d.editingId || d.dateTouched || d.date === today) return false;
+  d.date = today; if (!S.numberTouched) d.number = nextInvoiceNumber(today); saveDraftLocal(); return true;
+}
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { if (rollDraftDate()) softRender(); pull(true); } });
 setInterval(() => { if (document.visibilityState === "visible") pull(true); }, 90000);
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
 
@@ -1085,6 +1093,7 @@ loadDraftLocal();
 if (S.draft && !S.draft.editingId && !S.draft.ppnTouched) S.draft.ppnPct = "";
 const cached = lsGet(CACHE_KEY); if (cached) applyData(cached);
 if (!S.draft) S.draft = freshDraft();
+rollDraftDate();
 const fromLink = readSetupHash();
 if (fromLink) { S.setupPrefill = fromLink; if (!S.cfg || S.cfg.url !== fromLink.url || S.cfg.key !== fromLink.key) { S.cfg = null; render(); connect(fromLink.url, fromLink.key); } }
 render(); setSync();
