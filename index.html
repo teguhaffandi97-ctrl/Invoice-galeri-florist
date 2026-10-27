@@ -216,7 +216,7 @@ function freshDraft() {
   const acc = sortedBy(S.accounts, "order");
   return {
     number: nextInvoiceNumber(date), date, dueDays: S.biz.dueDays ?? 14, customerId: "",
-    items: [newItem()], discountPct: 0, ppnPct: S.biz.ppn ?? 11,
+    items: [newItem()], discountPct: 0, ppnPct: "",
     acc1: acc[0]?.id || "", acc2: acc[1]?.id || "", note: "", editingId: null, status: "Belum Lunas",
   };
 }
@@ -450,8 +450,8 @@ function viewBuat() {
     <section class="card">
       <h3>Ringkasan</h3>
       <div class="row">
-        <label class="f">Diskon (%)<input id="fDisc" class="num" inputmode="decimal" value="${esc(d.discountPct)}"></label>
-        <label class="f">PPN (%)<input id="fPpn" class="num" inputmode="decimal" value="${esc(d.ppnPct)}"></label>
+        <label class="f">Diskon (%)<input id="fDisc" class="num" inputmode="decimal" placeholder="0" value="${Number(d.discountPct) ? esc(d.discountPct) : ""}"></label>
+        <label class="f">PPN (%)<input id="fPpn" class="num" inputmode="decimal" placeholder="Kosong = tanpa PPN" value="${Number(d.ppnPct) ? esc(d.ppnPct) : ""}"></label>
       </div>
       <div class="totals num" id="totals"></div>
       <div class="muted small" id="terbilang"></div>
@@ -647,8 +647,7 @@ function viewLainnya() {
       <label class="f">Alamat baris 2<input id="bA2" value="${esc(S.biz.address2)}"></label>
       <div class="row"><label class="f">Telepon / WA<input id="bPhone" inputmode="tel" value="${esc(S.biz.phone)}"></label>
       <label class="f">Email<input id="bEmail" inputmode="email" value="${esc(S.biz.email)}"></label></div>
-      <div class="row"><label class="f">PPN bawaan (%)<input id="bPpn" class="num" inputmode="decimal" value="${esc(S.biz.ppn)}"></label>
-      <label class="f">Jatuh tempo bawaan (hari)<input id="bDue" class="num" inputmode="numeric" value="${esc(S.biz.dueDays)}"></label></div>
+      <div class="row"><label class="f">Jatuh tempo bawaan (hari)<input id="bDue" class="num" inputmode="numeric" value="${esc(S.biz.dueDays)}"></label></div>
       <label class="f">Catatan di invoice (satu per baris)<textarea id="bNotes" rows="4">${esc(S.biz.notes)}</textarea></label>
       <button type="button" class="primary" data-act="saveBiz">Simpan info usaha</button>
     </section>
@@ -979,7 +978,7 @@ document.addEventListener("click", async (e) => {
       await go(async () => { await put("accounts", aid, data); S.editing = null; toast("Rekening tersimpan."); render(); });
       break; }
     case "saveBiz": {
-      const data = { name: $("#bName").value.trim() || "Galeri Florist", address1: $("#bA1").value.trim(), address2: $("#bA2").value.trim(), phone: $("#bPhone").value.trim(), email: $("#bEmail").value.trim(), ppn: num($("#bPpn").value), dueDays: num($("#bDue").value), notes: $("#bNotes").value };
+      const data = { name: $("#bName").value.trim() || "Galeri Florist", address1: $("#bA1").value.trim(), address2: $("#bA2").value.trim(), phone: $("#bPhone").value.trim(), email: $("#bEmail").value.trim(), ppn: 0, dueDays: num($("#bDue").value), notes: $("#bNotes").value };
       await go(async () => { await put("settings", "business", data); S.biz = { ...DEFAULT_BIZ, ...data }; toast("Info usaha tersimpan."); });
       break; }
     case "hFilter": S.histFilter = b.dataset.k; render(); break;
@@ -1002,7 +1001,7 @@ document.addEventListener("click", async (e) => {
         date: act === "editInv" ? r.date : todayISO(),
         dueDays: Math.max(0, Math.round((new Date(r.due) - new Date(r.date)) / 864e5)) || S.biz.dueDays,
         customerId: S.customers.some((c) => c.id === r.customerId) ? r.customerId : "",
-        items: (r.items || []).map((it) => ({ ...it })), discountPct: r.discountPct || 0, ppnPct: r.ppnPct ?? S.biz.ppn,
+        items: (r.items || []).map((it) => ({ ...it })), discountPct: r.discountPct || 0, ppnPct: act === "editInv" ? (r.ppnPct || "") : "",
         acc1: findAcc(r.accounts?.[0]), acc2: findAcc(r.accounts?.[1]), note: r.note || "",
         status: act === "editInv" ? (r.status || "Belum Lunas") : "Belum Lunas",
         editingId: act === "editInv" ? r.id : null,
@@ -1029,7 +1028,7 @@ document.addEventListener("input", (e) => {
   else if (t.id === "fNumber") { d.number = t.value; S.numberTouched = true; }
   else if (t.id === "fDue") { d.dueDays = num(t.value); $("#dueText").textContent = tglID(addDays(d.date, d.dueDays)); }
   else if (t.id === "fDisc") d.discountPct = t.value.replace(",", ".");
-  else if (t.id === "fPpn") d.ppnPct = t.value.replace(",", ".");
+  else if (t.id === "fPpn") { d.ppnPct = t.value.replace(",", "."); d.ppnTouched = true; }
   else if (t.id === "fNote") d.note = t.value;
   else return;
   saveDraftLocal(); updateTotals();
@@ -1082,6 +1081,8 @@ setInterval(() => { if (document.visibilityState === "visible") pull(true); }, 9
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
 
 loadDraftLocal();
+// PPN is typed by hand on every invoice; drop the old automatic 11% from a saved draft.
+if (S.draft && !S.draft.editingId && !S.draft.ppnTouched) S.draft.ppnPct = "";
 const cached = lsGet(CACHE_KEY); if (cached) applyData(cached);
 if (!S.draft) S.draft = freshDraft();
 const fromLink = readSetupHash();
