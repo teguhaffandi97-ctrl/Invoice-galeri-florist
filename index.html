@@ -124,7 +124,7 @@ img { max-width: 100%; }
 <div class="sticky-total" id="stickyTotal" hidden>
   <div class="in">
     <div><div class="lbl">Total tagihan</div><div class="val num" id="stickyVal">Rp 0</div></div>
-    <button class="primary" id="btnSavePdf" type="button">Simpan &amp; kirim PDF</button>
+    <button class="primary" id="btnSavePdf" type="button">Simpan invoice</button>
   </div>
 </div>
 <nav class="tabs" aria-label="Menu utama"><div class="in" id="tabs"></div></nav>
@@ -217,7 +217,7 @@ function freshDraft() {
   return {
     number: nextInvoiceNumber(date), date, dueDays: S.biz.dueDays ?? 14, customerId: "",
     items: [newItem()], discountPct: 0, ppnPct: S.biz.ppn ?? 11,
-    acc1: acc[0]?.id || "", acc2: acc[1]?.id || "", note: "", editingId: null,
+    acc1: acc[0]?.id || "", acc2: acc[1]?.id || "", note: "", editingId: null, status: "Belum Lunas",
   };
 }
 function saveDraftLocal() { try { localStorage.setItem("gf-draft", JSON.stringify({ d: S.draft, t: S.numberTouched })); } catch {} }
@@ -385,9 +385,23 @@ function viewBuat() {
       <div class="muted small">Jumlah: <span class="line-total num" data-line="${i}">${rp(c.lines[i])}</span></div>
     </div>`).join("");
 
+  const saved = S.lastSaved && S.invoices.find((x) => x.id === S.lastSaved);
+  const savedPaid = saved && saved.status === "Lunas";
   return `
   <div class="stack">
     ${S.installEvt ? '<div class="banner info row" style="align-items:center"><span>Pasang aplikasi ini di layar utama HP.</span><button type="button" class="sm primary" data-act="install" style="flex:0 0 auto">Pasang</button></div>' : ""}
+    ${saved ? `<section class="card saved" id="savedCard">
+      <div class="li-top"><b>${esc(saved.number)} tersimpan</b><span class="chip ${savedPaid ? "paid" : "unpaid"}">${savedPaid ? "Lunas" : "Belum lunas"}</span></div>
+      <div class="small">${esc(saved.customer?.name || "")} · <b class="num">${rp(saved.total)}</b></div>
+      <div class="row">
+        <button type="button" class="primary" data-act="pdfDl" data-id="${esc(saved.id)}">Unduh PDF</button>
+        <button type="button" data-act="pdf" data-id="${esc(saved.id)}">Kirim PDF</button>
+      </div>
+      <div class="row">
+        <button type="button" data-act="togglePaid" data-id="${esc(saved.id)}">${savedPaid ? "Tandai belum lunas" : "Tandai lunas"}</button>
+        <button type="button" class="ghost" data-act="closeSaved">Tutup</button>
+      </div>
+    </section>` : ""}
     <section class="card">
       <h3>${d.editingId ? "Ubah invoice" : "Invoice baru"}</h3>
       <div class="row">
@@ -438,6 +452,12 @@ function viewBuat() {
     </section>
 
     <section class="card">
+      <h3>Status pembayaran</h3>
+      <div class="seg">${[["Belum Lunas", "Belum lunas"], ["Lunas", "Lunas"]].map(([k, l]) => `<button type="button" data-act="setStatus" data-k="${k}" aria-pressed="${(d.status || "Belum Lunas") === k}">${l}</button>`).join("")}</div>
+      <div class="muted small">Pilih <b>Lunas</b> jika pelanggan sudah membayar. PDF akan diberi tanda LUNAS.</div>
+    </section>
+
+    <section class="card">
       <label class="f">Catatan khusus (opsional)<textarea id="fNote" placeholder="mis. Kirim ke gedung acara pukul 08.00">${esc(d.note)}</textarea></label>
       <div class="row"><button type="button" data-act="resetDraft">${d.editingId ? "Batal ubah" : "Kosongkan formulir"}</button></div>
     </section>
@@ -470,7 +490,7 @@ function updateTotals() {
   $("#terbilang").textContent = c.total ? "Terbilang: " + terbilang(c.total) : "";
   c.lines.forEach((v, i) => { const el = document.querySelector(`[data-line="${i}"]`); if (el) el.textContent = rp(v); });
   $("#stickyVal").textContent = rp(c.total);
-  $("#btnSavePdf").textContent = d.editingId ? "Simpan perubahan & kirim" : "Simpan & kirim PDF";
+  $("#btnSavePdf").textContent = d.editingId ? "Simpan perubahan" : "Simpan invoice";
 }
 
 function viewRiwayat() {
@@ -641,7 +661,7 @@ function invoiceFromDraft() {
     items: d.items.filter((it) => it.desc.trim() && Number(it.qty) > 0).map((it) => ({ desc: it.desc.trim(), unit: it.unit || "", qty: Number(it.qty), price: Number(it.price) || 0, productId: it.productId || "" })),
     discountPct: Number(d.discountPct) || 0, ppnPct: Number(d.ppnPct) || 0,
     subtotal: c.subtotal, discount: c.discount, ppn: c.ppn, total: c.total,
-    accounts: accs, note: d.note || "",
+    accounts: accs, note: d.note || "", status: d.status === "Lunas" ? "Lunas" : "Belum Lunas",
   };
 }
 
@@ -659,6 +679,13 @@ function buildPdf(inv) {
   doc.setFontSize(9.5);
   const meta = [["No. Invoice", inv.number], ["Tanggal", tglID(inv.date)], ["Jatuh Tempo", tglID(inv.due)]];
   meta.forEach(([k, v], i) => { const y = 30 + i * 5.2; doc.setFont("helvetica", "normal"); doc.setTextColor(...MUTED); doc.text(k, R - 62, y); doc.setTextColor(...INK); doc.setFont("helvetica", "bold"); doc.text(v, R, y, { align: "right" }); });
+  const PAID = inv.status === "Lunas", GREEN = [29, 122, 76];
+  if (PAID) {
+    doc.setFillColor(...GREEN); doc.roundedRect(R - 26, 42.3, 26, 5.2, 1.2, 1.2, "F");
+    doc.setTextColor(255); doc.setFont("helvetica", "bold"); doc.setFontSize(9);
+    doc.text("LUNAS", R - 13, 46, { align: "center" });
+    doc.setFontSize(9.5);
+  }
 
   let y = 52;
   doc.setDrawColor(221, 227, 234); doc.line(M, y - 4, R, y - 4);
@@ -709,7 +736,10 @@ function buildPdf(inv) {
     inv.accounts.forEach((a) => { doc.setTextColor(...INK); doc.setFont("helvetica", "bold"); doc.text(a.bank, M, py); doc.text(a.number, M + 30, py); py += 5.2; });
     doc.setFont("helvetica", "normal"); doc.setTextColor(...MUTED); doc.text("Atas nama", M, py); doc.setTextColor(...INK); doc.text(inv.accounts[0].holder || "", M + 30, py); py += 5.2;
   }
-  doc.setTextColor(...MUTED); doc.text("Berita", M, py); doc.setTextColor(...INK); doc.text(inv.number, M + 30, py); py += 8;
+  doc.setTextColor(...MUTED); doc.text("Berita", M, py); doc.setTextColor(...INK); doc.text(inv.number, M + 30, py); py += 5.2;
+  doc.setTextColor(...MUTED); doc.text("Status", M, py);
+  doc.setFont("helvetica", "bold"); doc.setTextColor(...(PAID ? GREEN : INK)); doc.text(PAID ? "LUNAS" : "Belum lunas", M + 30, py);
+  doc.setFont("helvetica", "normal"); py += 8;
 
   // notes
   const notes = String(biz.notes || "").split("\n").map((s) => s.trim()).filter(Boolean);
@@ -925,6 +955,8 @@ document.addEventListener("click", async (e) => {
       await go(async () => { await put("settings", "business", data); S.biz = { ...DEFAULT_BIZ, ...data }; toast("Info usaha tersimpan."); });
       break; }
     case "hFilter": S.histFilter = b.dataset.k; render(); break;
+    case "setStatus": d.status = b.dataset.k; saveDraftLocal(); render(); break;
+    case "closeSaved": S.lastSaved = null; render(); break;
     case "pdf": { const r = S.invoices.find((x) => x.id === id); if (r) await savePdf(r, "share"); break; }
     case "pdfDl": { const r = S.invoices.find((x) => x.id === id); if (r) await savePdf(r, "download"); break; }
     case "connect": await go(() => connect($("#sUrl").value, $("#sKey").value)); break;
@@ -944,6 +976,7 @@ document.addEventListener("click", async (e) => {
         customerId: S.customers.some((c) => c.id === r.customerId) ? r.customerId : "",
         items: (r.items || []).map((it) => ({ ...it })), discountPct: r.discountPct || 0, ppnPct: r.ppnPct ?? S.biz.ppn,
         acc1: findAcc(r.accounts?.[0]), acc2: findAcc(r.accounts?.[1]), note: r.note || "",
+        status: act === "editInv" ? (r.status || "Belum Lunas") : "Belum Lunas",
         editingId: act === "editInv" ? r.id : null,
       };
       if (!S.draft.items.length) S.draft.items = [newItem()];
@@ -1002,14 +1035,13 @@ $("#btnSavePdf").addEventListener("click", async () => {
   const btn = $("#btnSavePdf"); btn.disabled = true;
   const id = d.editingId || uid();
   const old = S.invoices.find((x) => x.id === id);
-  const rec = { ...inv, status: old?.status || "Belum Lunas", createdAt: old?.createdAt || new Date().toISOString(), updatedAt: new Date().toISOString() };
-  // Start the save first, then open the share sheet while the tap still counts as a user gesture.
-  const saving = put("invoices", id, rec).then(() => true, () => false);
-  try { await savePdf(rec, "share"); } catch {}
-  const ok = await saving;
+  const paidAt = inv.status === "Lunas" ? (old?.status === "Lunas" && old.paidAt) || new Date().toISOString() : "";
+  const rec = { ...inv, paidAt, createdAt: old?.createdAt || new Date().toISOString(), updatedAt: new Date().toISOString() };
+  const ok = await put("invoices", id, rec).then(() => true, () => false);
   if (ok) {
+    S.lastSaved = id;
     S.draft = freshDraft(); S.numberTouched = false; S.draft.number = nextInvoiceNumber(S.draft.date); saveDraftLocal();
-    render(); toast(`${rec.number} tersimpan di Google Sheets.`);
+    render(); window.scrollTo(0, 0); toast(`${rec.number} tersimpan. Unduh atau kirim PDF-nya di atas.`);
   }
   btn.disabled = false; updateTotals();
 });
