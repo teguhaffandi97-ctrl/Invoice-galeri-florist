@@ -247,7 +247,7 @@ function freshDraft() {
   const acc = sortedBy(S.accounts, "order");
   return {
     number: nextInvoiceNumber(date), date, dueDays: S.biz.dueDays ?? 14, customerId: "",
-    items: [newItem()], discountPct: 0, ppnPct: "",
+    items: [newItem()], discountPct: 0, ppnPct: "", shipping: 0,
     acc1: acc[0]?.id || "", acc2: acc[1]?.id || "", note: "", editingId: null, status: "Belum Lunas",
   };
 }
@@ -259,7 +259,9 @@ function calc(d) {
   const subtotal = lines.reduce((a, b) => a + b, 0);
   const discount = Math.round(subtotal * (Number(d.discountPct) || 0) / 100);
   const ppn = Math.round((subtotal - discount) * (Number(d.ppnPct) || 0) / 100);
-  return { lines, subtotal, discount, ppn, total: subtotal - discount + ppn };
+  // Shipping is a flat amount added after PPN (PPN applies to the goods only).
+  const shipping = Math.round(Number(d.shipping) || 0);
+  return { lines, subtotal, discount, ppn, shipping, total: subtotal - discount + ppn + shipping };
 }
 
 /* ---------- Google Sheets connection ---------- */
@@ -489,6 +491,7 @@ function viewBuat() {
         <label class="f">Diskon (%)<input id="fDisc" class="num" inputmode="decimal" placeholder="0" value="${Number(d.discountPct) ? esc(d.discountPct) : ""}"></label>
         <label class="f">PPN (%)<input id="fPpn" class="num" inputmode="decimal" placeholder="Kosong = tanpa PPN" value="${Number(d.ppnPct) ? esc(d.ppnPct) : ""}"></label>
       </div>
+      <label class="f">Ongkos kirim (Rp)<input id="fShip" class="num" inputmode="numeric" placeholder="Kosong = tanpa ongkos kirim" value="${Number(d.shipping) ? Number(d.shipping).toLocaleString("id-ID") : ""}"></label>
       <div class="totals num" id="totals"></div>
       <div class="muted small" id="terbilang"></div>
     </section>
@@ -536,6 +539,7 @@ function updateTotals() {
   t.innerHTML = `<div><span>Subtotal</span><span>${rp(c.subtotal)}</span></div>
     ${c.discount ? `<div><span>Diskon ${esc(d.discountPct)}%</span><span>− ${rp(c.discount)}</span></div>` : ""}
     ${Number(d.ppnPct) ? `<div><span>PPN ${esc(d.ppnPct)}%</span><span>${rp(c.ppn)}</span></div>` : ""}
+    ${c.shipping ? `<div><span>Ongkos kirim</span><span>${rp(c.shipping)}</span></div>` : ""}
     <div class="grand"><span>Total</span><span>${rp(c.total)}</span></div>`;
   $("#terbilang").textContent = c.total ? "Terbilang: " + terbilang(c.total) : "";
   c.lines.forEach((v, i) => { const el = document.querySelector(`[data-line="${i}"]`); if (el) el.textContent = rp(v); });
@@ -1023,7 +1027,7 @@ function invoiceFromDraft() {
     customerId: d.customerId, customer: { name: cust.name || "", address: cust.address || "", phone: cust.phone || "", email: cust.email || "", code: cust.code || "" },
     items: d.items.filter((it) => it.desc.trim() && Number(it.qty) > 0).map((it) => ({ desc: it.desc.trim(), unit: it.unit || "", qty: Number(it.qty), price: Number(it.price) || 0, productId: it.productId || "" })),
     discountPct: Number(d.discountPct) || 0, ppnPct: Number(d.ppnPct) || 0,
-    subtotal: c.subtotal, discount: c.discount, ppn: c.ppn, total: c.total,
+    subtotal: c.subtotal, discount: c.discount, ppn: c.ppn, shipping: c.shipping, total: c.total,
     accounts: accs, note: d.note || "", status: d.status === "Lunas" ? "Lunas" : "Belum Lunas",
   };
 }
@@ -1081,6 +1085,7 @@ function buildPdf(inv) {
   const rows = [["Subtotal", rp(inv.subtotal)]];
   if (inv.discount) rows.push([`Diskon ${inv.discountPct}%`, "- " + rp(inv.discount)]);
   if (inv.ppnPct) rows.push([`PPN ${inv.ppnPct}%`, rp(inv.ppn)]);
+  if (Number(inv.shipping)) rows.push(["Ongkos kirim", rp(inv.shipping)]);
   doc.setFontSize(9.5);
   rows.forEach(([k, v], i) => { doc.setTextColor(...MUTED); doc.setFont("helvetica", "normal"); doc.text(k, 130, y + i * 5.5); doc.setTextColor(...INK); doc.text(v, R, y + i * 5.5, { align: "right" }); });
   let ty = y + rows.length * 5.5;
@@ -1274,7 +1279,7 @@ async function exportExcel() {
   add("Produk", sortedBy(S.products, "code").map((p) => ({ Kode: p.code, "Nama Produk / Jasa": p.name, Satuan: p.unit, "Harga Satuan (Rp)": Number(p.price) || 0 })), ["Kode", "Nama Produk / Jasa", "Satuan", "Harga Satuan (Rp)"]);
   add("Rekening", sortedBy(S.accounts, "order").map((a) => ({ Bank: a.bank, "No. Rekening": a.number, "Atas Nama": a.holder })), ["Bank", "No. Rekening", "Atas Nama"]);
   const inv = [...S.invoices].sort((a, b) => String(a.createdAt || "").localeCompare(String(b.createdAt || "")));
-  add("Riwayat Invoice", inv.map((r) => ({ "No. Invoice": r.number, Tanggal: r.date, "Jatuh Tempo": r.due, "ID Pelanggan": r.customer?.code || "", Pelanggan: r.customer?.name || "", Item: (r.items || []).map((it) => `${it.desc} (${it.qty} ${it.unit || ""} x ${it.price})`).join("; "), "Subtotal (Rp)": r.subtotal, "Diskon (Rp)": r.discount, "PPN (Rp)": r.ppn, "Total (Rp)": r.total, Status: r.status || "Belum Lunas" })), ["No. Invoice", "Tanggal", "Jatuh Tempo", "ID Pelanggan", "Pelanggan", "Item", "Subtotal (Rp)", "Diskon (Rp)", "PPN (Rp)", "Total (Rp)", "Status"]);
+  add("Riwayat Invoice", inv.map((r) => ({ "No. Invoice": r.number, Tanggal: r.date, "Jatuh Tempo": r.due, "ID Pelanggan": r.customer?.code || "", Pelanggan: r.customer?.name || "", Item: (r.items || []).map((it) => `${it.desc} (${it.qty} ${it.unit || ""} x ${it.price})`).join("; "), "Subtotal (Rp)": r.subtotal, "Diskon (Rp)": r.discount, "PPN (Rp)": r.ppn, "Ongkos Kirim (Rp)": Number(r.shipping) || 0, "Total (Rp)": r.total, Status: r.status || "Belum Lunas" })), ["No. Invoice", "Tanggal", "Jatuh Tempo", "ID Pelanggan", "Pelanggan", "Item", "Subtotal (Rp)", "Diskon (Rp)", "PPN (Rp)", "Ongkos Kirim (Rp)", "Total (Rp)", "Status"]);
   const out = XLSX.write(wb, { bookType: "xlsx", type: "array" });
   downloadBlob(new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), `Data Galeri Florist ${todayISO()}.xlsx`);
   toast("File Excel tersimpan di folder Download.");
@@ -1368,7 +1373,7 @@ document.addEventListener("click", async (e) => {
         date: act === "editInv" ? r.date : todayISO(),
         dueDays: Math.max(0, Math.round((new Date(r.due) - new Date(r.date)) / 864e5)) || S.biz.dueDays,
         customerId: S.customers.some((c) => c.id === r.customerId) ? r.customerId : "",
-        items: (r.items || []).map((it) => ({ ...it })), discountPct: r.discountPct || 0, ppnPct: act === "editInv" ? (r.ppnPct || "") : "",
+        items: (r.items || []).map((it) => ({ ...it })), discountPct: r.discountPct || 0, ppnPct: act === "editInv" ? (r.ppnPct || "") : "", shipping: Number(r.shipping) || 0,
         acc1: findAcc(r.accounts?.[0]), acc2: findAcc(r.accounts?.[1]), note: r.note || "",
         status: act === "editInv" ? (r.status || "Belum Lunas") : "Belum Lunas",
         editingId: act === "editInv" ? r.id : null,
@@ -1395,6 +1400,7 @@ document.addEventListener("input", (e) => {
   else if (t.id === "fNumber") { d.number = t.value; S.numberTouched = true; }
   else if (t.id === "fDue") { d.dueDays = num(t.value); $("#dueText").textContent = tglID(addDays(d.date, d.dueDays)); }
   else if (t.id === "fDisc") d.discountPct = t.value.replace(",", ".");
+  else if (t.id === "fShip") d.shipping = num(t.value);
   else if (t.id === "fPpn") { d.ppnPct = t.value.replace(",", "."); d.ppnTouched = true; }
   else if (t.id === "fNote") d.note = t.value;
   else return;
@@ -1406,6 +1412,7 @@ document.addEventListener("change", (e) => {
   if (t.id === "xlsFile" && t.files && t.files[0]) { readExcel(t.files[0]); t.value = ""; return; }
   if (t.id === "dPeriod") { S.dashPeriod = t.value; render(); return; }
   if (t.id === "kPeriod") { S.kasPeriod = t.value; render(); return; }
+  if (t.id === "fShip") { const n = num(t.value); t.value = n ? n.toLocaleString("id-ID") : ""; return; }
   if (t.id === "kAmount") { const n = num(t.value); t.value = n ? n.toLocaleString("id-ID") : ""; return; }
   if (S.view !== "buat") return;
   if (t.dataset.f === "productId") {
