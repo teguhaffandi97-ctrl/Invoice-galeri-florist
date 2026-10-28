@@ -56,7 +56,7 @@ h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: v
 .stack { display: grid; gap: 14px; }
 .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: end; }
 .row > * { flex: 1 1 120px; min-width: 0; }
-label.f { display: grid; gap: 4px; font-size: 13px; color: var(--muted); font-weight: 500; }
+label.f { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; font-size: 13px; color: var(--muted); font-weight: 500; }
 input, select, textarea { font: inherit; font-size: 16px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 11px; width: 100%; min-height: 44px; }
 input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 textarea { min-height: 70px; resize: vertical; }
@@ -270,11 +270,13 @@ const lsGet = (k) => { try { return JSON.parse(localStorage.getItem(k) || "null"
 const lsSet = (k, v) => { try { v === null ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 S.cfg = lsGet(CFG_KEY);
 S.online = false; S.syncing = false; S.lastSync = null; S.installEvt = null;
+let writes = 0;   // counts saves/deletes that reached Google Sheets
 
 async function api(payload) {
   const res = await fetch(S.cfg.url, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ ...payload, key: S.cfg.key }) });
   let j; try { j = await res.json(); } catch { const e = new Error("bad_response"); e.code = "bad_response"; throw e; }
   if (!j.ok) { const e = new Error(j.error || "error"); e.code = j.error; throw e; }
+  if (payload.action !== "all" && payload.action !== "ping") writes++;
   return j;
 }
 // Google Sheets turns typed phone/account numbers into numbers (and drops a leading 0); keep them as text.
@@ -302,13 +304,21 @@ function cacheNow() { lsSet(CACHE_KEY, { customers: S.customers, products: S.pro
 async function pull(silent) {
   if (!S.cfg || S.syncing) return;
   S.syncing = true; setSync();
-  try { const j = await api({ action: "all" }); applyData(j.data); cacheNow(); S.online = true; S.lastSync = new Date(); }
+  const w = writes; let stale = false;
+  try {
+    const j = await api({ action: "all" });
+    // A save finished while this was loading, so the data may be from before it (the new invoice would vanish and its number be reused): load again.
+    if (w !== writes) stale = true;
+    else { applyData(j.data); cacheNow(); S.online = true; S.lastSync = new Date(); }
+  }
   catch (e) {
     S.online = false;
     if (e.code === "unauthorized") toast("Kode akses ditolak. Periksa di menu Lainnya → Koneksi.");
     else if (!silent) toast("Tidak bisa memuat data. Periksa koneksi internet.");
   }
-  S.syncing = false; setSync(); softRender();
+  S.syncing = false; setSync();
+  if (stale) return pull(silent);
+  softRender();
 }
 function setSync() {
   const el = $("#sync"); if (!el) return;
@@ -317,11 +327,17 @@ function setSync() {
   else if (S.online) el.textContent = "Tersinkron dengan Google Sheets · " + S.lastSync.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
   else el.textContent = "Offline — menampilkan data terakhir";
 }
-// Re-render unless the user is typing inside the current view.
+// Re-render unless the user is typing inside the current view; fields already edited in an open form keep what was typed.
 function softRender() {
   const a = document.activeElement;
   if (a && a.closest && a.closest("#view") && /INPUT|TEXTAREA/.test(a.tagName)) return;
+  const edited = (el) => el.tagName === "SELECT" ? [...el.options].some((o) => o.selected !== o.defaultSelected) : el.type !== "file" && el.value !== el.defaultValue;
+  const kept = [...document.querySelectorAll("#view input[id], #view textarea[id], #view select[id]")].filter(edited).map((el) => [el.id, el.value]);
   render();
+  for (const [id, v] of kept) {
+    const el = document.getElementById(id);
+    if (el && (el.tagName !== "SELECT" || [...el.options].some((o) => o.value === v))) el.value = v;
+  }
 }
 function localPut(coll, id, data) {
   if (coll === "settings") { S.biz = { ...DEFAULT_BIZ, ...data }; return; }
@@ -1059,14 +1075,19 @@ function buildPdf(inv) {
   doc.setDrawColor(221, 227, 234); doc.line(M, y - 4, R, y - 4);
   doc.setFontSize(8); doc.setTextColor(...ACC); doc.setFont("helvetica", "bold");
   doc.text("DARI", M, y + 1); doc.text("DITAGIHKAN KEPADA", 112, y + 1);
-  doc.setTextColor(...INK); doc.setFontSize(10.5); doc.text(biz.name || "", M, y + 7); doc.text(inv.customer.name || "-", 112, y + 7);
+  doc.setTextColor(...INK); doc.setFontSize(10.5);
+  // Long names wrap instead of running past the page edge.
+  const bizN = doc.splitTextToSize(biz.name || "", 86), custN = doc.splitTextToSize(inv.customer.name || "-", 82);
+  bizN.forEach((s, i) => doc.text(s, M, y + 7 + i * 4.6));
+  custN.forEach((s, i) => doc.text(s, 112, y + 7 + i * 4.6));
   doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(...MUTED);
   const left = [biz.address1, biz.address2, [biz.phone, biz.email].filter(Boolean).join(" · ")].filter(Boolean);
   const leftL = left.flatMap((s) => doc.splitTextToSize(s, 86));
   const right = [...doc.splitTextToSize(inv.customer.address || "", 82), inv.customer.phone, inv.customer.email].filter(Boolean);
-  leftL.forEach((s, i) => doc.text(s, M, y + 12 + i * 4.4));
-  right.forEach((s, i) => doc.text(s, 112, y + 12 + i * 4.4));
-  y = y + 14 + Math.max(leftL.length, right.length) * 4.4 + 2;
+  const ly = y + 12 + (bizN.length - 1) * 4.6, ry = y + 12 + (custN.length - 1) * 4.6;
+  leftL.forEach((s, i) => doc.text(s, M, ly + i * 4.4));
+  right.forEach((s, i) => doc.text(s, 112, ry + i * 4.4));
+  y = Math.max(ly + leftL.length * 4.4, ry + right.length * 4.4) + 4;
 
   doc.autoTable({
     startY: y, margin: { left: M, right: M },
@@ -1078,14 +1099,32 @@ function buildPdf(inv) {
     columnStyles: { 0: { halign: "center", cellWidth: 10 }, 2: { halign: "center", cellWidth: 13 }, 3: { halign: "center", cellWidth: 18 }, 4: { halign: "right", cellWidth: 30 }, 5: { halign: "right", cellWidth: 32 } },
   });
   y = doc.lastAutoTable.finalY + 6;
-  const need = 70 + (inv.note ? 10 : 0);
-  if (y + need > 285) { doc.addPage(); y = 20; }
 
-  // totals (right)
+  // Measure everything below the table first, so it moves to a new page as one block instead of running off the bottom.
   const rows = [["Subtotal", rp(inv.subtotal)]];
   if (inv.discount) rows.push([`Diskon ${inv.discountPct}%`, "- " + rp(inv.discount)]);
   if (inv.ppnPct) rows.push([`PPN ${inv.ppnPct}%`, rp(inv.ppn)]);
   if (Number(inv.shipping)) rows.push(["Ongkos kirim", rp(inv.shipping)]);
+  doc.setFont("helvetica", "italic"); doc.setFontSize(8.5);
+  const tb = doc.splitTextToSize("Terbilang: " + terbilang(inv.total), R - 126);
+  doc.setFont("helvetica", "normal");
+  const notes = String(biz.notes || "").split("\n").map((s) => s.trim()).filter(Boolean);
+  if (inv.note) notes.unshift(inv.note);
+  const noteL = notes.map((n) => doc.splitTextToSize("• " + n, 100));
+  doc.setFont("helvetica", "bold"); doc.setFontSize(9.5);
+  // Account numbers line up after the widest bank name (a very long one wraps).
+  const col = M + Math.min(50, Math.max(30, ...inv.accounts.map((a) => doc.getTextWidth(a.bank) + 4)));
+  const bankL = inv.accounts.map((a) => doc.splitTextToSize(a.bank, col - M - 3));
+  // One "Atas nama" line when all accounts share a holder; otherwise each holder under its own number.
+  const oneHolder = new Set(inv.accounts.map((a) => a.holder)).size <= 1;
+  const accLines = inv.accounts.map((a, i) => Math.max(bankL[i].length, !oneHolder && a.holder ? 2 : 1));
+  const accH = inv.accounts.length ? 5.5 + accLines.reduce((t, n) => t + n * 5.2, 0) + (oneHolder ? 5.2 : 0) : 0;
+  const payH = 6 + accH + 5.2 + 8 + (noteL.length ? 4.8 + noteL.reduce((t, l) => t + l.length * 4, 0) : 0);
+  const sigOff = Math.max(rows.length * 5.5 + 14 + tb.length * 4, 30);
+  const footOff = Math.max(payH, sigOff + 39) + 10;
+  if (y + footOff > 287) { doc.addPage(); y = 20; }
+
+  // totals (right)
   doc.setFontSize(9.5);
   rows.forEach(([k, v], i) => { doc.setTextColor(...MUTED); doc.setFont("helvetica", "normal"); doc.text(k, 130, y + i * 5.5); doc.setTextColor(...INK); doc.text(v, R, y + i * 5.5, { align: "right" }); });
   let ty = y + rows.length * 5.5;
@@ -1093,7 +1132,6 @@ function buildPdf(inv) {
   doc.setTextColor(255); doc.setFont("helvetica", "bold"); doc.setFontSize(11.5);
   doc.text("TOTAL", 130, ty + 2.6); doc.text(rp(inv.total), R - 2, ty + 2.6, { align: "right" });
   doc.setTextColor(...MUTED); doc.setFont("helvetica", "italic"); doc.setFontSize(8.5);
-  const tb = doc.splitTextToSize("Terbilang: " + terbilang(inv.total), R - 126);
   doc.text(tb, R, ty + 11, { align: "right" });
 
   // payment (left)
@@ -1102,34 +1140,36 @@ function buildPdf(inv) {
   let py = y + 6; doc.setFontSize(9.5);
   if (inv.accounts.length) {
     doc.setFont("helvetica", "normal"); doc.setTextColor(...MUTED); doc.text("Transfer ke salah satu rekening:", M, py); py += 5.5;
-    inv.accounts.forEach((a) => { doc.setTextColor(...INK); doc.setFont("helvetica", "bold"); doc.text(a.bank, M, py); doc.text(a.number, M + 30, py); py += 5.2; });
-    doc.setFont("helvetica", "normal"); doc.setTextColor(...MUTED); doc.text("Atas nama", M, py); doc.setTextColor(...INK); doc.text(inv.accounts[0].holder || "", M + 30, py); py += 5.2;
+    inv.accounts.forEach((a, i) => {
+      doc.setTextColor(...INK); doc.setFont("helvetica", "bold"); doc.text(bankL[i], M, py); doc.text(a.number, col, py);
+      if (!oneHolder && a.holder) { doc.setFont("helvetica", "normal"); doc.setTextColor(...MUTED); doc.text("a.n. " + a.holder, col, py + 5.2); }
+      py += accLines[i] * 5.2;
+    });
+    if (oneHolder) { doc.setFont("helvetica", "normal"); doc.setTextColor(...MUTED); doc.text("Atas nama", M, py); doc.setTextColor(...INK); doc.text(inv.accounts[0].holder || "", col, py); py += 5.2; }
   }
-  doc.setTextColor(...MUTED); doc.text("Berita", M, py); doc.setTextColor(...INK); doc.text(inv.number, M + 30, py); py += 5.2;
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(...MUTED); doc.text("Berita", M, py); doc.setTextColor(...INK); doc.text(inv.number, col, py); py += 5.2;
   doc.setTextColor(...MUTED); doc.text("Status", M, py);
-  doc.setFont("helvetica", "bold"); doc.setTextColor(...(PAID ? GREEN : INK)); doc.text(PAID ? "LUNAS" : "Belum lunas", M + 30, py);
+  doc.setFont("helvetica", "bold"); doc.setTextColor(...(PAID ? GREEN : INK)); doc.text(PAID ? "LUNAS" : "Belum lunas", col, py);
   doc.setFont("helvetica", "normal"); py += 8;
 
   // notes
-  const notes = String(biz.notes || "").split("\n").map((s) => s.trim()).filter(Boolean);
-  if (inv.note) notes.unshift(inv.note);
-  if (notes.length) {
+  if (noteL.length) {
     doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.setTextColor(...ACC); doc.text("CATATAN", M, py); py += 4.8;
     doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(...MUTED);
-    notes.forEach((n) => { const l = doc.splitTextToSize("• " + n, 100); doc.text(l, M, py); py += l.length * 4; });
+    noteL.forEach((l) => { doc.text(l, M, py); py += l.length * 4; });
   }
 
   // signature + stamp (right)
-  const sy = Math.max(ty + 14 + tb.length * 4, y + 30);
+  const sy = y + sigOff;
   const cx = 163;
   doc.setFont("helvetica", "normal"); doc.setFontSize(9.5); doc.setTextColor(...INK);
   doc.text("Hormat kami,", cx, sy, { align: "center" });
   doc.addImage(STAMP, "PNG", cx - 19, sy + 3, 38, 30.6);
   doc.setFont("helvetica", "bold"); doc.text(biz.name || "", cx, sy + 39, { align: "center" });
 
-  const fy = Math.max(py, sy + 39) + 10;
   doc.setFont("helvetica", "italic"); doc.setFontSize(9); doc.setTextColor(...ACC);
-  doc.text("Terima kasih atas kepercayaan Anda.", M, Math.min(fy, 288));
+  doc.text("Terima kasih atas kepercayaan Anda.", M, y + footOff);
   return doc;
 }
 
@@ -1368,10 +1408,11 @@ document.addEventListener("click", async (e) => {
     case "editInv": case "dupInv": {
       const r = S.invoices.find((x) => x.id === id); if (!r) return;
       const findAcc = (a) => a && S.accounts.find((x) => x.number === a.number)?.id || "";
+      const dueDays = Math.round((new Date(r.due) - new Date(r.date)) / 864e5);   // 0 = due the same day
       S.draft = {
         number: act === "editInv" ? r.number : nextInvoiceNumber(todayISO()),
         date: act === "editInv" ? r.date : todayISO(),
-        dueDays: Math.max(0, Math.round((new Date(r.due) - new Date(r.date)) / 864e5)) || S.biz.dueDays,
+        dueDays: dueDays >= 0 ? dueDays : S.biz.dueDays,
         customerId: S.customers.some((c) => c.id === r.customerId) ? r.customerId : "",
         items: (r.items || []).map((it) => ({ ...it })), discountPct: r.discountPct || 0, ppnPct: act === "editInv" ? (r.ppnPct || "") : "", shipping: Number(r.shipping) || 0,
         acc1: findAcc(r.accounts?.[0]), acc2: findAcc(r.accounts?.[1]), note: r.note || "",
