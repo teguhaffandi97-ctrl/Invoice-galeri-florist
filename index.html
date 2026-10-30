@@ -241,7 +241,7 @@ function nextCode(list, prefix) {
   for (const x of list) { const m = String(x.code || "").match(/(\d+)$/); if (m && String(x.code).startsWith(prefix)) max = Math.max(max, +m[1]); }
   return prefix + String(max + 1).padStart(3, "0");
 }
-function newItem() { return { productId: "", desc: "", unit: "", qty: 1, price: 0 }; }
+function newItem() { return { productId: "", desc: "", detail: "", unit: "", qty: 1, price: 0 }; }
 function freshDraft() {
   const date = todayISO();
   const acc = sortedBy(S.accounts, "order");
@@ -284,7 +284,7 @@ function normCustomer(c) { return { ...c, code: txt(c.code), name: txt(c.name), 
 function normInvoice(r) {
   return { ...r, number: txt(r.number), date: txt(r.date), due: txt(r.due),
     customer: normCustomer(r.customer || {}),
-    items: (r.items || []).map((it) => ({ ...it, desc: txt(it.desc), unit: txt(it.unit), qty: Number(it.qty) || 0, price: Number(it.price) || 0 })),
+    items: (r.items || []).map((it) => ({ ...it, desc: txt(it.desc), detail: txt(it.detail), unit: txt(it.unit), qty: Number(it.qty) || 0, price: Number(it.price) || 0 })),
     accounts: (r.accounts || []).map((a) => ({ bank: txt(a.bank), number: txt(a.number), holder: txt(a.holder) })), note: txt(r.note) };
 }
 function applyData(d) {
@@ -429,6 +429,7 @@ function viewBuat() {
         </select>
       </label>
       <label class="f">Deskripsi<input data-f="desc" data-i="${i}" id="d-${i}" value="${esc(it.desc)}" placeholder="mis. Buket mawar merah 12 tangkai"></label>
+      <label class="f">Keterangan tambahan (opsional)<textarea data-f="detail" data-i="${i}" id="x-${i}" rows="2" placeholder="mis. Ucapan: Selamat &amp; Sukses atas Pelantikan… · Dari: PT ABC · Warna dominan merah">${esc(it.detail || "")}</textarea></label>
       <div class="row">
         <label class="f" style="flex:0 1 80px">Qty<input data-f="qty" data-i="${i}" id="q-${i}" class="num" inputmode="decimal" value="${esc(it.qty)}"></label>
         <label class="f" style="flex:0 1 90px">Satuan<input data-f="unit" data-i="${i}" id="u-${i}" value="${esc(it.unit)}" placeholder="buket"></label>
@@ -511,7 +512,7 @@ function viewBuat() {
     </section>
 
     <section class="card">
-      <label class="f">Catatan khusus (opsional)<textarea id="fNote" placeholder="mis. Kirim ke gedung acara pukul 08.00">${esc(d.note)}</textarea></label>
+      <label class="f">Keterangan invoice (opsional, tampil di bawah tabel)<textarea id="fNote" placeholder="mis. Untuk acara pernikahan Bapak Andi, dikirim ke Gedung Sultan Hasanuddin pukul 08.00">${esc(d.note)}</textarea></label>
       <div class="row"><button type="button" data-act="resetDraft">${d.editingId ? "Batal ubah" : "Kosongkan formulir"}</button></div>
     </section>
   </div>`;
@@ -1025,7 +1026,7 @@ function invoiceFromDraft() {
   return {
     number: d.number.trim(), date: d.date, due: addDays(d.date, d.dueDays),
     customerId: d.customerId, customer: { name: cust.name || "", address: cust.address || "", phone: cust.phone || "", email: cust.email || "", code: cust.code || "" },
-    items: d.items.filter((it) => it.desc.trim() && Number(it.qty) > 0).map((it) => ({ desc: it.desc.trim(), unit: it.unit || "", qty: Number(it.qty), price: Number(it.price) || 0, productId: it.productId || "" })),
+    items: d.items.filter((it) => it.desc.trim() && Number(it.qty) > 0).map((it) => ({ desc: it.desc.trim(), detail: (it.detail || "").trim(), unit: it.unit || "", qty: Number(it.qty), price: Number(it.price) || 0, productId: it.productId || "" })),
     discountPct: Number(d.discountPct) || 0, ppnPct: Number(d.ppnPct) || 0,
     subtotal: c.subtotal, discount: c.discount, ppn: c.ppn, shipping: c.shipping, total: c.total,
     accounts: accs, note: d.note || "", status: d.status === "Lunas" ? "Lunas" : "Belum Lunas",
@@ -1071,14 +1072,30 @@ function buildPdf(inv) {
   doc.autoTable({
     startY: y, margin: { left: M, right: M },
     head: [["No", "Deskripsi", "Qty", "Satuan", "Harga Satuan", "Jumlah"]],
-    body: inv.items.map((it, i) => [i + 1, it.desc, it.qty.toLocaleString("id-ID"), it.unit, rp(it.price), rp(it.qty * it.price)]),
+    // An item's extra description sits in its own row under the item, spanning the columns after "No".
+    body: inv.items.flatMap((it, i) => {
+      const fill = i % 2 ? [244, 247, 251] : [255, 255, 255];
+      const row = [i + 1, it.desc, it.qty.toLocaleString("id-ID"), it.unit, rp(it.price), rp(it.qty * it.price)].map((c) => ({ content: c, styles: { fillColor: fill } }));
+      if (!it.detail) return [row];
+      row[0].rowSpan = 2;
+      row.slice(1).forEach((c) => { c.styles.cellPadding = { top: 2.4, bottom: 0.6, left: 2.4, right: 2.4 }; c.styles.lineWidth = { top: 0.2, right: 0.2, bottom: 0, left: 0.2 }; });
+      return [row, [{ content: it.detail, colSpan: 5, styles: { fillColor: fill, fontStyle: "italic", fontSize: 8.3, textColor: MUTED, cellPadding: { top: 0, bottom: 2.4, left: 2.4, right: 2.4 }, lineWidth: { top: 0, right: 0.2, bottom: 0.2, left: 0.2 } } }]];
+    }),
     styles: { font: "helvetica", fontSize: 9, textColor: INK, cellPadding: 2.4, lineColor: [221, 227, 234], lineWidth: 0.2 },
     headStyles: { fillColor: ACC, textColor: 255, fontStyle: "bold", halign: "center" },
-    alternateRowStyles: { fillColor: [244, 247, 251] },
     columnStyles: { 0: { halign: "center", cellWidth: 10 }, 2: { halign: "center", cellWidth: 13 }, 3: { halign: "center", cellWidth: 18 }, 4: { halign: "right", cellWidth: 30 }, 5: { halign: "right", cellWidth: 32 } },
   });
   y = doc.lastAutoTable.finalY + 6;
-  const need = 70 + (inv.note ? 10 : 0);
+  if (inv.note) {
+    const nl = doc.setFontSize(9).splitTextToSize(inv.note, R - M - 6);
+    const h = 9 + nl.length * 4.2;
+    if (y + h > 280) { doc.addPage(); y = 20; }
+    doc.setFillColor(244, 247, 251); doc.setDrawColor(221, 227, 234); doc.roundedRect(M, y - 1, R - M, h, 1.5, 1.5, "FD");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.setTextColor(...ACC); doc.text("KETERANGAN", M + 3, y + 3.5);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(...INK); doc.text(nl, M + 3, y + 8.5);
+    y += h + 5;
+  }
+  const need = 70;
   if (y + need > 285) { doc.addPage(); y = 20; }
 
   // totals (right)
@@ -1112,7 +1129,6 @@ function buildPdf(inv) {
 
   // notes
   const notes = String(biz.notes || "").split("\n").map((s) => s.trim()).filter(Boolean);
-  if (inv.note) notes.unshift(inv.note);
   if (notes.length) {
     doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.setTextColor(...ACC); doc.text("CATATAN", M, py); py += 4.8;
     doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(...MUTED);
@@ -1279,7 +1295,7 @@ async function exportExcel() {
   add("Produk", sortedBy(S.products, "code").map((p) => ({ Kode: p.code, "Nama Produk / Jasa": p.name, Satuan: p.unit, "Harga Satuan (Rp)": Number(p.price) || 0 })), ["Kode", "Nama Produk / Jasa", "Satuan", "Harga Satuan (Rp)"]);
   add("Rekening", sortedBy(S.accounts, "order").map((a) => ({ Bank: a.bank, "No. Rekening": a.number, "Atas Nama": a.holder })), ["Bank", "No. Rekening", "Atas Nama"]);
   const inv = [...S.invoices].sort((a, b) => String(a.createdAt || "").localeCompare(String(b.createdAt || "")));
-  add("Riwayat Invoice", inv.map((r) => ({ "No. Invoice": r.number, Tanggal: r.date, "Jatuh Tempo": r.due, "ID Pelanggan": r.customer?.code || "", Pelanggan: r.customer?.name || "", Item: (r.items || []).map((it) => `${it.desc} (${it.qty} ${it.unit || ""} x ${it.price})`).join("; "), "Subtotal (Rp)": r.subtotal, "Diskon (Rp)": r.discount, "PPN (Rp)": r.ppn, "Ongkos Kirim (Rp)": Number(r.shipping) || 0, "Total (Rp)": r.total, Status: r.status || "Belum Lunas" })), ["No. Invoice", "Tanggal", "Jatuh Tempo", "ID Pelanggan", "Pelanggan", "Item", "Subtotal (Rp)", "Diskon (Rp)", "PPN (Rp)", "Ongkos Kirim (Rp)", "Total (Rp)", "Status"]);
+  add("Riwayat Invoice", inv.map((r) => ({ "No. Invoice": r.number, Tanggal: r.date, "Jatuh Tempo": r.due, "ID Pelanggan": r.customer?.code || "", Pelanggan: r.customer?.name || "", Item: (r.items || []).map((it) => `${it.desc}${it.detail ? " – " + it.detail : ""} (${it.qty} ${it.unit || ""} x ${it.price})`).join("; "), "Subtotal (Rp)": r.subtotal, "Diskon (Rp)": r.discount, "PPN (Rp)": r.ppn, "Ongkos Kirim (Rp)": Number(r.shipping) || 0, "Total (Rp)": r.total, Status: r.status || "Belum Lunas" })), ["No. Invoice", "Tanggal", "Jatuh Tempo", "ID Pelanggan", "Pelanggan", "Item", "Subtotal (Rp)", "Diskon (Rp)", "PPN (Rp)", "Ongkos Kirim (Rp)", "Total (Rp)", "Status"]);
   const out = XLSX.write(wb, { bookType: "xlsx", type: "array" });
   downloadBlob(new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), `Data Galeri Florist ${todayISO()}.xlsx`);
   toast("File Excel tersimpan di folder Download.");
@@ -1392,7 +1408,7 @@ document.addEventListener("input", (e) => {
   if (t.id === "hQuery") { S.histQuery = t.value; const pos = t.selectionStart; render(); const n = $("#hQuery"); n.focus(); n.setSelectionRange(pos, pos); return; }
   if (t.id === "cQuery") { S.custQuery = t.value; const pos = t.selectionStart; render(); const n = $("#cQuery"); n.focus(); n.setSelectionRange(pos, pos); return; }
   if (S.view !== "buat") return;
-  if (t.dataset.f && t.tagName === "INPUT") {
+  if (t.dataset.f && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) {
     const it = d.items[+t.dataset.i]; const f = t.dataset.f;
     it[f] = f === "price" ? num(t.value) : f === "qty" ? (t.value.replace(",", ".")) : t.value;
     if (f === "desc" && it.productId) { /* keep link but allow edits */ }
