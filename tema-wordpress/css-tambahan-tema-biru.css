@@ -1,0 +1,62 @@
+/* ===== Galeri Florist · tema biru =====
+   Tempel di: Tampilan → Sesuaikan → CSS Tambahan, lalu Terbitkan.
+   Untuk kembali ke tampilan lama: hapus semua kode ini, lalu Terbitkan. */
+:root { --gf-navy: #071f5e; --gf-biru: #0a3fc0; --gf-kuning: #ffd84a; --gf-latar: #eef3ff; --gf-garis: #d8e1f2; --gf-teks: #0d1a3a; }
+/* Warna utama tema Razzi (link, ikon, hover) ikut biru yang sama */
+body { --rz-color-primary: #0a3fc0; --rz-color-hover-primary: #071f5e; --rz-background-color-primary: #0a3fc0; --rz-border-color-primary: #0a3fc0; }
+
+/* Header biru, menu dan ikon putih */
+body #site-header, body #site-header .header-contents { background: linear-gradient(90deg, var(--gf-navy), var(--gf-biru)) !important; border-bottom-color: transparent !important; box-shadow: none; }
+body #site-header .nav-menu > li > a, body #site-header .header-items > * > a, body #site-header .search-icon,
+body #site-header .mobile-menu-toggle, body #site-header .logo-text { color: #fff !important; }
+body #site-header .nav-menu > li > a:hover, body #site-header .search-icon:hover { color: var(--gf-kuning) !important; }
+body #site-header .site-branding img { height: 46px !important; width: auto !important; max-width: none; }
+body #site-header .header-mobile .site-branding img { height: 34px !important; }
+
+/* Menu samping di HP: logo di atas pita biru, tidak gepeng */
+body .menu-mobile-panel-content .modal-header { background: linear-gradient(90deg, var(--gf-navy), var(--gf-biru)); border-radius: 14px; padding: 12px 14px; align-items: center; }
+body .menu-mobile-panel-content .modal-header .logo-image { width: auto !important; height: 34px !important; }
+body .menu-mobile-panel-content .modal-header .button-close { color: #fff !important; }
+body .menu-mobile-navigation .nav-menu > li > a { color: var(--gf-navy) !important; }
+
+/* Bagian pembuka halaman depan */
+body .elementor-element-9b774b5 { background-color: var(--gf-latar) !important; }
+body .elementor-element-9b774b5 .elementor-heading-title, body .elementor-35956 .elementor-heading-title { color: var(--gf-navy) !important; }
+body .elementor-element-9b774b5 .razzi-button { background: var(--gf-kuning) !important; border-color: var(--gf-kuning) !important; color: var(--gf-navy) !important; border-radius: 999px; font-weight: 600; }
+body .elementor-element-9b774b5 .razzi-button:hover { background: var(--gf-navy) !important; border-color: var(--gf-navy) !important; color: var(--gf-kuning) !important; }
+
+/* Strip keunggulan (24 Jam, Gratis Ongkir, …) */
+body .feature-bar { background: linear-gradient(90deg, var(--gf-navy), var(--gf-biru)) !important; border-radius: 16px !important; }
+body .feature-bar .title { color: var(--gf-kuning) !important; }
+
+/* Kartu produk dan tombol Pesan Sekarang */
+body ul.products li.product .woocommerce-loop-product__title, body ul.products li.product .woocommerce-loop-product__title a { color: var(--gf-teks) !important; }
+body ul.products li.product .meta-cat { color: var(--gf-biru) !important; }
+body .price, body .price .amount, body .woocommerce-Price-amount { color: var(--gf-navy) !important; font-weight: 700; }
+body .ctc_woo_place .ctc_s_1, body .ctc_woo_place button.s1_btn,
+body a.ajax-load-products.razzi-button, body .woocommerce a.button, body .woocommerce button.button, body .single_add_to_cart_button {
+  background: var(--gf-biru) !important; border-color: var(--gf-biru) !important; color: #fff !important; border-radius: 999px !important; }
+body .ctc_woo_place .ctc_s_1:hover, body .ctc_woo_place button.s1_btn:hover,
+body a.ajax-load-products.razzi-button:hover, body .woocommerce a.button:hover, body .woocommerce button.button:hover, body .single_add_to_cart_button:hover {
+  background: var(--gf-navy) !important; border-color: var(--gf-navy) !important; color: var(--gf-kuning) !important; }
+/* Tombol Pesan Sekarang tidak lebih lebar dari kartunya (dulu membuat halaman HP bisa bergeser ke samping) */
+body .ctc_woo_place, body .ctc_woo_place .ctc_s_1 { max-width: 100%; box-sizing: border-box !important; }
+@media (max-width: 767px) { body .ctc_woo_place .ctc_s_1 { width: 100% !important; padding-left: 8px !important; padding-right: 8px !important; font-size: 13px !important; justify-content: center; } }
+body .woocommerce span.onsale { background: var(--gf-kuning) !important; color: var(--gf-navy) !important; }
+
+/* Kotak "Pesan Karangan Bunga Sekarang" */
+body .de-hero-section { background: linear-gradient(135deg, var(--gf-biru), var(--gf-navy)) !important; }
+body .de-hero-section .de-hero-btn { background: var(--gf-kuning) !important; border-color: var(--gf-kuning) !important; color: var(--gf-navy) !important; border-radius: 999px; }
+body .de-hero-section .de-hero-btn:hover { background: #fff !important; border-color: #fff !important; color: var(--gf-navy) !important; }
+
+/* FAQ */
+body .de-faq-title { color: var(--gf-navy) !important; }
+body .de-faq-item { border: 1px solid var(--gf-garis) !important; border-radius: 12px; overflow: hidden; }
+body .de-faq-question { color: var(--gf-teks) !important; }
+body .de-faq-q, body .de-faq-a { color: var(--gf-biru) !important; }
+body .de-faq-answer { background: var(--gf-latar) !important; color: var(--gf-teks) !important; }
+
+/* Footer biru */
+body #site-footer { background: linear-gradient(160deg, var(--gf-biru), var(--gf-navy)) !important; border-top: 0 !important; }
+body #site-footer, body #site-footer .copyright, body #site-footer a { color: rgba(255, 255, 255, .88) !important; }
+body #site-footer a:hover { color: var(--gf-kuning) !important; }
