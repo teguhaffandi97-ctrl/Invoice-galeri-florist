@@ -17,7 +17,7 @@ Terpisah dari aplikasi invoice di folder utama.
 
 Di awal `<script>` pada `index.html`, bagian **PENGATURAN**:
 
-- `TOKO.whatsapp` — nomor WhatsApp admin (**wajib**, belum diisi).
+- `TOKO.whatsapp` — nomor WhatsApp admin (sudah diisi 088242815991).
 - `TOKO.jamBuka`, `TOKO.instagram` — opsional.
 - `TOKO.website` — alamat website WooCommerce (sudah `https://galeriflorist.id`).
 
