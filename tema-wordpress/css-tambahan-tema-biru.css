@@ -10,8 +10,8 @@ body #site-header, body #site-header .header-contents { background: linear-gradi
 body #site-header .nav-menu > li > a, body #site-header .header-items > * > a, body #site-header .search-icon,
 body #site-header .mobile-menu-toggle, body #site-header .logo-text { color: #fff !important; }
 body #site-header .nav-menu > li > a:hover, body #site-header .search-icon:hover { color: var(--gf-kuning) !important; }
-body #site-header .site-branding img { height: 46px !important; width: auto !important; max-width: none; }
-body #site-header .header-mobile .site-branding img { height: 34px !important; }
+body #site-header .site-branding img { height: 62px !important; width: auto !important; max-width: none; }
+body #site-header .header-mobile .site-branding img { height: 44px !important; }
 
 /* Menu samping di HP: logo di atas pita biru, tidak gepeng */
 body .menu-mobile-panel-content .modal-header { background: linear-gradient(90deg, var(--gf-navy), var(--gf-biru)); border-radius: 14px; padding: 12px 14px; align-items: center; }
