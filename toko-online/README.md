@@ -1,12 +1,12 @@
 # Toko online Galeri Florist
 
-Halaman pesan bunga bergaya aplikasi (tema biru) untuk dipasang di `https://galeriflorist.id/app/`.
+Halaman pesan papan karangan bunga bergaya aplikasi (tema biru) untuk dipasang di `https://galeriflorist.id/app/`.
 Terpisah dari aplikasi invoice di folder utama.
 
 ## Isi
 
-- Katalog dengan pencarian dan filter kategori, keranjang, formulir pengiriman (tanggal, alamat, ucapan kartu),
-  lalu pesanan dikirim ke WhatsApp toko.
+- Katalog dengan pencarian dan filter kategori, keranjang, formulir pesanan papan (tanggal kirim, alamat acara,
+  untuk siapa/acara apa, tulisan di papan, nama pengirim), lalu pesanan dikirim ke WhatsApp toko.
 - Produk, harga, foto, dan kategori diambil otomatis dari WooCommerce di galeriflorist.id
   (`/wp-json/wc/store/v1/products`, data publik, tanpa login). Salinan terakhir disimpan di browser pengunjung,
   jadi katalog tetap tampil jika website sedang lambat.
