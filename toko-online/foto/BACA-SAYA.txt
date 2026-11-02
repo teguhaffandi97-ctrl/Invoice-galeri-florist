@@ -1,0 +1,5 @@
+Simpan foto produk di folder ini.
+
+1. Gunakan foto berukuran sekitar 800 x 1000 piksel (tegak), di bawah 300 KB.
+2. Beri nama file tanpa spasi, misalnya: buket-mawar.jpg
+3. Di file index.html, bagian PRODUK, isi foto: "foto/buket-mawar.jpg"
