@@ -108,16 +108,17 @@ section.block { padding-block: 34px 6px; }
 .chips::-webkit-scrollbar { display: none; }
 .chips button { flex: 0 0 auto; min-height: 40px; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-weight: 600; font-size: 14px; color: var(--navy); }
 .chips button[aria-pressed="true"] { background: var(--navy); border-color: var(--navy); color: var(--gold); }
-.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; display: grid; grid-template-rows: auto 1fr; box-shadow: 0 1px 2px rgba(7, 31, 94, .05); }
-.card .pic { display: block; width: 100%; border: 0; padding: 0; background: none; aspect-ratio: 4 / 5; overflow: hidden; }
+.card .pic { display: block; width: 100%; border: 0; padding: 0; background: none; aspect-ratio: 16 / 9; overflow: hidden; }
 .card .pic img, .card .pic svg { width: 100%; height: 100%; object-fit: cover; display: block; }
 .card .body { padding: 10px 12px 12px; display: grid; gap: 4px; align-content: start; }
 .card .cat { font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--royal); }
-.card h3 { margin: 0; font-size: 15px; font-weight: 600; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.6em; }
+.card h3 { margin: 0; font-size: 15px; font-weight: 600; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .price { font-weight: 700; color: var(--navy); }
 .price.ask { color: var(--muted); font-weight: 600; font-size: 14px; }
-.card .add { margin-top: 6px; min-height: 40px; border-radius: 999px; border: 1px solid var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: 14px; }
+.buy { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+.card .add { min-height: 40px; padding: 0 16px; min-width: 132px; border-radius: 999px; border: 1px solid var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: 14px; }
 .card .add.in { background: var(--accent); color: #fff; }
 .price s { display: inline-block; white-space: nowrap; color: var(--muted); font-weight: 500; font-size: .85em; margin-left: 4px; }
 .empty .link { min-height: 0; padding: 0 2px; }
@@ -125,7 +126,7 @@ section.block { padding-block: 34px 6px; }
 .card .pic { position: relative; }
 .stok { position: absolute; left: 8px; top: 8px; background: var(--ink); color: #fff; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; }
 .skel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
-.skel .ph { aspect-ratio: 4 / 5; background: linear-gradient(90deg, #e6edfb 0%, #f4f7fe 50%, #e6edfb 100%); background-size: 200% 100%; }
+.skel .ph { aspect-ratio: 16 / 9; background: linear-gradient(90deg, #e6edfb 0%, #f4f7fe 50%, #e6edfb 100%); background-size: 200% 100%; }
 .skel .ln { height: 12px; margin: 12px 12px 0; border-radius: 6px; background: #e6edfb; }
 .skel .ln.short { width: 50%; margin-bottom: 14px; }
 @media (prefers-reduced-motion: no-preference) { .skel .ph { animation: shimmer 1.3s linear infinite; } @keyframes shimmer { to { background-position: -200% 0; } } }
@@ -161,10 +162,12 @@ dialog.sheet::backdrop { background: rgba(5, 18, 54, .55); }
 @media (prefers-reduced-motion: no-preference) { dialog.sheet[open] { animation: up .22s ease-out; } @keyframes up { from { transform: translateY(40px); opacity: 0; } } }
 .sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
 .sheet-head h2 { font-size: 22px; }
-.sheet-body { overflow-y: auto; padding: 16px; display: grid; gap: 14px; overscroll-behavior: contain; }
+.sheet-body { overflow-y: auto; padding: 16px; display: grid; gap: 14px; grid-auto-rows: max-content; align-content: start; overscroll-behavior: contain; }
 .sheet-foot { padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--line); display: grid; gap: 8px; }
-.detail-pic { border-radius: var(--radius); overflow: hidden; aspect-ratio: 4 / 5; max-height: 46dvh; margin: 0 auto; width: 100%; max-width: 360px; }
-.detail-pic img, .detail-pic svg { width: 100%; height: 100%; object-fit: cover; display: block; }
+.detail-pic { border-radius: var(--radius); overflow: hidden; aspect-ratio: 16 / 9; width: 100%; background: var(--bg); }
+.ket p { margin: 0 0 8px; }
+.ket p:last-child { margin-bottom: 0; }
+.detail-pic img, .detail-pic svg { width: 100%; height: 100%; object-fit: contain; display: block; }
 .line { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
 .line .nm { font-weight: 600; }
 .qty { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 999px; grid-row: span 2; }
@@ -187,14 +190,15 @@ label.f textarea { min-height: 72px; resize: vertical; }
 .toast button { border: 0; background: none; color: var(--gold); font-weight: 700; padding: 4px; }
 
 @media (min-width: 600px) {
-  .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .card h3 { min-height: 2.6em; }
   .hero h1 { font-size: 40px; }
 }
 @media (min-width: 900px) {
   body { padding-bottom: 0; }
   nav.tabbar { display: none; }
   nav.desk { display: flex; }
-  .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .hero-card { grid-template-columns: 1.15fr .85fr; align-items: center; padding: 56px; gap: 24px; }
   .hero h1 { font-size: 50px; }
   .hero .art { order: 0; justify-self: center; width: min(380px, 100%); margin: 0; }
@@ -234,9 +238,9 @@ label.f textarea { min-height: 72px; resize: vertical; }
       <div class="art"><img src="logo-transparan.png" alt="Logo Galeri Florist" width="640" height="640"></div>
     </div>
     <div class="usp">
-      <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8.5 8.5 0 0 1-12.6 7.4L3 21l1.6-5.2A8.5 8.5 0 1 1 21 12z"/></svg>Pesan lewat WhatsApp</div>
-      <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 10h10M7 14h6"/></svg>Tulisan papan sesuai pesanan</div>
-      <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>Pilih tanggal kirim</div>
+      <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 6h12v10H2zM14 9h4.5L22 12.5V16h-8"/><circle cx="6.5" cy="17.5" r="1.8"/><circle cx="17.5" cy="17.5" r="1.8"/></svg>Gratis ongkir Makassar &amp; Gowa</div>
+      <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>Siap kirim ±60–120 menit</div>
+      <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>Antar, pasang &amp; jemput papan</div>
     </div>
   </section>
 
@@ -285,9 +289,11 @@ const TOKO = {
   whatsapp: "088242815991",
   alamat: "Jl. Sultan Hasanuddin No. 159, Kompleks Anging Mammiri Blok B1/17, Makassar",
   jamBuka: "",     // contoh: "Setiap hari, 08.00–21.00" (kosongkan jika tidak ingin ditampilkan)
-  instagram: "",   // contoh: "galeriflorist" (tanpa @)
+  instagram: "galerifloristt",   // tanpa @
   // Produk, harga, foto, dan kategori diambil otomatis dari WooCommerce di website ini.
   website: "https://galeriflorist.id",
+  // Ditampilkan di keranjang. Kosongkan jika ongkir selalu dikonfirmasi admin.
+  ongkir: "Gratis ongkir area Makassar & Kota Sungguminasa (Gowa).",
 };
 
 // Cadangan: hanya dipakai jika produk dari website tidak bisa dimuat. Biarkan kosong, atau isi seperti contoh:
@@ -312,16 +318,22 @@ const BLOOMS = [["#e8798f", "#f6b8c4"], ["#f2bd1d", "#fbe08a"], ["#6f8ff0", "#b7
 const bloom = (x, y, r, c) => { let s = ""; for (let i = 0; i < 6; i++) s += `<ellipse cx="${x}" cy="${y - r * 0.55}" rx="${r * 0.42}" ry="${r * 0.6}" fill="${c}" transform="rotate(${i * 60} ${x} ${y})"/>`; return s + `<circle cx="${x}" cy="${y}" r="${r * 0.3}" fill="#fff" opacity=".8"/><circle cx="${x}" cy="${y}" r="${r * 0.16}" fill="${c}"/>`; };
 function art(cat) {
   const [c1, c2] = BLOOMS[[...String(cat)].reduce((h, ch) => h + ch.charCodeAt(0), 0) % BLOOMS.length];
-  return `<svg viewBox="0 0 100 125" aria-hidden="true" preserveAspectRatio="xMidYMid slice"><rect width="100" height="125" fill="#e8efff"/>
-    <path d="M32 92 L26 121 M68 92 L74 121" stroke="#8a6a4a" stroke-width="2.6" stroke-linecap="round"/>
-    <rect x="12" y="16" width="76" height="78" rx="3" fill="#fff" stroke="#0a3fc0" stroke-width="1.6"/>
-    <rect x="27" y="44" width="46" height="5" rx="2.5" fill="#0a3fc0" opacity=".75"/>
-    <rect x="21" y="54" width="58" height="3.6" rx="1.8" fill="#53607a" opacity=".4"/>
-    <rect x="30" y="61" width="40" height="3.6" rx="1.8" fill="#53607a" opacity=".4"/>
-    ${bloom(18, 21, 9, c1)}${bloom(30, 17, 6, c2)}${bloom(82, 21, 9, c1)}${bloom(70, 17, 6, c2)}${bloom(18, 89, 9, c2)}${bloom(82, 89, 9, c2)}${bloom(50, 90, 7, c1)}${bloom(36, 92, 5, c1)}${bloom(64, 92, 5, c1)}
+  return `<svg viewBox="0 0 160 90" aria-hidden="true" preserveAspectRatio="xMidYMid slice"><rect width="160" height="90" fill="#e8efff"/>
+    <path d="M44 64 L38 86 M116 64 L122 86" stroke="#8a6a4a" stroke-width="2.4" stroke-linecap="round"/>
+    <rect x="16" y="12" width="128" height="54" rx="3" fill="#1b2433" stroke="#0a3fc0" stroke-width="1.4"/>
+    <rect x="52" y="30" width="56" height="5" rx="2.5" fill="#ffd84a" opacity=".9"/>
+    <rect x="42" y="40" width="76" height="3.6" rx="1.8" fill="#fff" opacity=".55"/>
+    <rect x="56" y="47" width="48" height="3.6" rx="1.8" fill="#fff" opacity=".55"/>
+    ${bloom(20, 16, 8, c1)}${bloom(31, 13, 5.5, c2)}${bloom(140, 16, 8, c1)}${bloom(129, 13, 5.5, c2)}${bloom(20, 62, 8, c2)}${bloom(140, 62, 8, c2)}${bloom(80, 66, 7, c1)}${bloom(66, 67, 5, c2)}${bloom(94, 67, 5, c2)}
   </svg>`;
 }
-const pic = (p, big) => (big ? p.fotoBesar || p.foto : p.foto) ? `<img src="${esc(big ? p.fotoBesar || p.foto : p.foto)}" alt="${esc(p.nama)}" loading="lazy">` : art(p.kategori);
+const CARD_SIZES = "(max-width: 599px) calc(100vw - 32px), (max-width: 899px) 45vw, 360px", DETAIL_SIZES = "(max-width: 560px) 100vw, 528px";
+function pickSrc(srcset, want) {
+  const c = String(srcset || "").split(",").map((x) => x.trim().split(/\s+/)).map(([u, w]) => [u, parseInt(w, 10)]).filter(([u, w]) => u && w).sort((a, b) => a[1] - b[1]);
+  return (c.find(([, w]) => w >= want) || c[c.length - 1] || [])[0];
+}
+const pic = (p, big) => !p.foto ? art(p.kategori)
+  : `<img src="${esc(pickSrc(p.srcset, big ? 1024 : 768) || p.foto)}"${p.srcset ? ` srcset="${esc(p.srcset)}" sizes="${big ? DETAIL_SIZES : CARD_SIZES}"` : ""} alt="${esc(p.nama)}" loading="lazy">`;
 const priceHtml = (p, size) => hasPrice(p)
   ? `<div class="price num"${size ? ` style="font-size:${size}px"` : ""}>${p.mulai ? "Mulai " : ""}${rp(p.harga)}${p.coret ? ` <s>${rp(p.coret)}</s>` : ""}</div>`
   : '<div class="price ask">Tanya harga</div>';
@@ -330,6 +342,11 @@ const priceHtml = (p, size) => hasPrice(p)
 let produk = [], katalog = "loading";   // loading | ok | error
 const byName = (n) => produk.find((p) => p.nama === n);
 const plain = (html) => (new DOMParser().parseFromString(String(html || ""), "text/html").body.textContent || "").replace(/\s+/g, " ").trim();
+// Product text keeps one line per paragraph (the shop writes short paragraphs with emoji).
+const paras = (html) => { const body = new DOMParser().parseFromString(String(html || ""), "text/html").body; const ps = [...body.querySelectorAll("p, li")];
+  return (ps.length ? ps.map((e) => e.textContent) : [body.textContent]).map((t) => t.replace(/\s+/g, " ").trim()).filter(Boolean).join("\n"); };
+// "Karangan Bunga Papan Hitam" → "Papan Hitam": every product is a flower board, so the prefix only takes space.
+const shortCat = (n) => n.replace(/^karangan bunga\s+/i, "") || n;
 function fromWoo(w) {
   const pr = w.prices || {}, unit = Math.pow(10, Number(pr.currency_minor_unit) || 0);
   const price = Number(pr.price) / unit, regular = Number(pr.regular_price) / unit;
@@ -337,10 +354,10 @@ function fromWoo(w) {
   const cat = (w.categories || []).find((c) => c.slug !== "uncategorized");
   const img = (w.images || [])[0] || {};
   return {
-    nama: plain(w.name), kategori: cat ? plain(cat.name) : "Lainnya",
+    nama: plain(w.name), kategori: cat ? shortCat(plain(cat.name)) : "Lainnya",
     harga: price > 0 ? price : null, coret: !range && regular > price ? regular : null, mulai: !!range,
-    foto: img.thumbnail || img.src || "", fotoBesar: img.src || "",
-    ket: plain(w.short_description) || plain(w.description).slice(0, 280),
+    foto: img.src || img.thumbnail || "", srcset: img.srcset || "",
+    ket: paras(w.short_description) || paras(w.description).slice(0, 600),
     link: w.permalink || "", habis: w.is_in_stock === false,
   };
 }
@@ -420,9 +437,9 @@ function renderGrid() {
       <div class="body">
         <span class="cat">${esc(p.kategori)}</span>
         <h3>${esc(p.nama)}</h3>
-        ${priceHtml(p)}
+        <div class="buy">${priceHtml(p)}
         ${p.habis ? `<button type="button" class="add" data-act="ask" data-n="${esc(p.nama)}">Tanya stok</button>`
-          : `<button type="button" class="add${n ? " in" : ""}" data-act="add" data-n="${esc(p.nama)}">${n ? `✓ Di keranjang (${n})` : "+ Keranjang"}</button>`}
+          : `<button type="button" class="add${n ? " in" : ""}" data-act="add" data-n="${esc(p.nama)}">${n ? `✓ Di keranjang (${n})` : "+ Keranjang"}</button>`}</div>
       </div>
     </article>`;
   }).join("") : `<div class="empty">Tidak ada papan yang cocok${query ? ` dengan “${esc(query)}”` : ""}. Coba kata lain, atau <button type="button" class="link" data-act="chat">tanyakan lewat WhatsApp</button>.</div>`;
@@ -449,7 +466,7 @@ function openDetail(name) {
     <div class="sheet-body">
       <div class="detail-pic">${pic(p, true)}</div>
       <div><div class="eyebrow" style="color:var(--muted)">${esc(p.kategori)}${p.habis ? ' · <span style="color:var(--alert)">Stok habis</span>' : ""}</div>${hasPrice(p) ? priceHtml(p, 20) : '<div class="price ask">Harga dikonfirmasi admin lewat WhatsApp</div>'}</div>
-      ${p.ket ? `<p style="margin:0">${esc(p.ket)}</p>` : ""}
+      ${p.ket ? `<div class="ket">${p.ket.split("\n").map((l) => `<p>${esc(l)}</p>`).join("")}</div>` : ""}
       ${p.link ? `<a href="${esc(p.link)}" target="_blank" rel="noopener" class="small">Lihat di website →</a>` : ""}
     </div>
     <div class="sheet-foot">
@@ -487,7 +504,7 @@ function renderCart() {
     </div>
     <div class="sheet-foot">
       ${anyFixed ? `<div class="total"><span>${allFixed ? "Total" : "Total sementara"}</span><span class="num">${rp(total)}</span></div>` : ""}
-      <div class="note">${allFixed ? "Belum termasuk ongkos kirim." : "Harga yang belum pasti dan ongkos kirim akan dikonfirmasi admin."} Pembayaran dilakukan setelah admin mengonfirmasi pesanan.</div>
+      <div class="note">${allFixed ? "" : "Harga yang belum pasti akan dikonfirmasi admin. "}${TOKO.ongkir ? esc(TOKO.ongkir) + " Di luar area itu, ongkir dikonfirmasi admin." : "Ongkos kirim dikonfirmasi admin."} Pembayaran dilakukan setelah admin mengonfirmasi pesanan.</div>
       <button type="button" class="btn wa block" data-act="send"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.5 0-3-.4-4.3-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2z"/></svg>Kirim pesanan lewat WhatsApp</button>
     </div>` : `
     <div class="sheet-body"><div class="empty" style="grid-column:auto">Keranjang masih kosong.<br><br><button type="button" class="btn primary" data-act="toCatalog">Lihat katalog</button></div></div>`}`;
@@ -501,7 +518,7 @@ function orderText() {
   const out = [`Halo ${TOKO.nama}, saya mau pesan papan karangan bunga:`, ""];
   lines.forEach((l, i) => out.push(`${i + 1}. ${l.p.nama} × ${l.qty}${fixedPrice(l.p) ? ` — ${rp(l.p.harga * l.qty)}` : hasPrice(l.p) ? ` — mulai ${rp(l.p.harga)}/item (mohon info harga)` : " — (mohon info harga)"}`));
   out.push("");
-  if (fixed.length) out.push(`${fixed.length === lines.length ? "Total" : "Total sementara"}: ${rp(total)} (belum termasuk ongkir)`);
+  if (fixed.length) out.push(`${fixed.length === lines.length ? "Total" : "Total sementara"}: ${rp(total)}${TOKO.ongkir ? "" : " (belum termasuk ongkir)"}`);
   out.push(`Cara terima: ${form.cara}`);
   out.push(`Tanggal: ${tglID(form.tanggal)}${form.jam ? ", jam " + form.jam.replace(":", ".") : ""}`);
   if (form.cara === "Diantar") out.push(`Alamat acara: ${form.alamat.trim()}`);
