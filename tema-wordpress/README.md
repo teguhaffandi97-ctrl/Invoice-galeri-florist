@@ -41,4 +41,4 @@ Kartu isi ulasan memakai plugin gratis "Widgets for Google Reviews" (Trustindex)
 Bagian "Cabang Galeri Florist" untuk halaman depan (widget **HTML** Elementor, di bawah bagian Ulasan Google): kartu
 cabang Makassar (Kompleks Anging Mammiri Blok B1/17) dan Kab. Gowa, masing-masing dengan tombol Petunjuk arah
 (tautan Google Maps dari pemilik), Chat WhatsApp (0882-4281-5991, pesan pembuka menyebut cabangnya), dan Tulis ulasan
-untuk cabang Makassar. Alamat lengkap cabang Gowa belum diberikan; kartunya merujuk ke Google Maps.
+untuk cabang Makassar. Alamat cabang Gowa: Jl. Sultan Hasanuddin No. 159, Gowa (depan Kopi Teori).
