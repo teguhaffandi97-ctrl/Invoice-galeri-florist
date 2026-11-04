@@ -32,6 +32,6 @@ akhir `<head>`) di Chromium, layar HP 390 px dan komputer 1366 px: tidak ada err
 Bagian "Ulasan Google" untuk halaman depan (widget **HTML** Elementor, di atas kotak "Pesan Karangan Bunga Sekarang"):
 peta Google Maps toko, tombol **Tulis ulasan** (`https://g.page/r/CcsJAsv1ys7gEAE/review`) dan **Lihat semua ulasan**
 (`https://maps.app.goo.gl/xqufwd5ZQJArv8FH9`). Peta disematkan dengan CID toko `16199108066719959499`, yang dibaca dari
-tautan ulasan. Google Maps diblokir dari sesi pembuatan, jadi peta belum dilihat langsung; jika peta tidak menunjukkan
-Galeri Florist, ganti `src` iframe dengan kode resmi dari Google Maps → Bagikan → Sematkan peta.
+tautan ulasan. Sudah terpasang di halaman depan (halaman 35956), dan pemilik sudah memastikan peta menunjukkan
+Galeri Florist dengan benar.
 Kartu isi ulasan memakai plugin gratis "Widgets for Google Reviews" (Trustindex), diletakkan tepat di bawahnya.
