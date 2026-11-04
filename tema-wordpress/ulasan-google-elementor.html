@@ -1,0 +1,30 @@
+<!-- Galeri Florist - Ulasan Google. Tempel di widget HTML Elementor. -->
+<section class="gf-ulasan">
+  <div class="gf-ulasan-teks">
+    <p class="gf-ulasan-label">Ulasan Google</p>
+    <h2>Dipercaya pelanggan di Makassar</h2>
+    <p>Lihat rating kami di Google Maps dan baca ulasan asli dari pelanggan Galeri Florist. Sudah pernah pesan? Ceritakan pengalaman Anda.</p>
+    <div class="gf-ulasan-tombol">
+      <a class="gf-tombol-kuning" href="https://g.page/r/CcsJAsv1ys7gEAE/review" target="_blank" rel="noopener">&#9733; Tulis ulasan</a>
+      <a class="gf-tombol-garis" href="https://maps.app.goo.gl/xqufwd5ZQJArv8FH9" target="_blank" rel="noopener">Lihat semua ulasan</a>
+    </div>
+  </div>
+  <div class="gf-ulasan-peta">
+    <iframe src="https://maps.google.com/maps?cid=16199108066719959499&amp;output=embed&amp;hl=id" title="Galeri Florist di Google Maps" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+  </div>
+</section>
+<style>
+.gf-ulasan { display: grid; gap: 24px; align-items: center; padding: 28px; border-radius: 20px; background: #eef3ff; border: 1px solid #d8e1f2; color: #3b4660; }
+.gf-ulasan-label { margin: 0 0 6px; font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #0a3fc0; }
+.gf-ulasan h2 { margin: 0 0 10px; font-size: 30px; line-height: 1.2; color: #071f5e; }
+.gf-ulasan-teks > p:not(.gf-ulasan-label) { margin: 0 0 18px; font-size: 16px; line-height: 1.6; color: #3b4660; }
+.gf-ulasan-tombol { display: flex; flex-wrap: wrap; gap: 10px; }
+.gf-ulasan-tombol a { display: inline-flex; align-items: center; min-height: 46px; padding: 10px 22px; border-radius: 999px; font-weight: 600; text-decoration: none; }
+.gf-ulasan .gf-tombol-kuning { background: #ffd84a; color: #071f5e !important; border: 2px solid #ffd84a; }
+.gf-ulasan .gf-tombol-garis { background: #fff; color: #071f5e !important; border: 2px solid #071f5e; }
+.gf-ulasan .gf-tombol-kuning:hover, .gf-ulasan .gf-tombol-garis:hover { background: #071f5e; border-color: #071f5e; color: #ffd84a !important; }
+.gf-ulasan-peta { border-radius: 16px; overflow: hidden; background: #fff; border: 1px solid #d8e1f2; aspect-ratio: 4 / 3; }
+.gf-ulasan-peta iframe { display: block; width: 100%; height: 100%; border: 0; }
+@media (min-width: 900px) { .gf-ulasan { grid-template-columns: 1fr 1.1fr; padding: 40px; gap: 36px; } }
+@media (max-width: 767px) { .gf-ulasan { padding: 20px 16px; } .gf-ulasan h2 { font-size: 24px; } .gf-ulasan-tombol a { flex: 1 1 auto; justify-content: center; } }
+</style>
