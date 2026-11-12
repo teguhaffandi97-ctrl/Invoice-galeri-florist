@@ -132,6 +132,10 @@ table.t td.r, table.t th.r { text-align: right; font-variant-numeric: tabular-nu
 .overdue { color: var(--crit); font-weight: 600; }
 .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(140px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 14px; z-index: 20; max-width: calc(100% - 32px); }
 .search { position: relative; }
+.sugg { margin-top: 6px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); overflow: hidden; display: grid; }
+.sugg button { border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; text-align: left; display: grid; gap: 2px; padding: 10px 12px; font-weight: 400; }
+.sugg button:last-child { border-bottom: 0; }
+.sugg button span { font-size: 13px; color: var(--muted); }
 details > summary { cursor: pointer; font-weight: 600; color: var(--accent); min-height: 32px; }
 .seg { display: flex; gap: 6px; flex-wrap: wrap; }
 .seg button { flex: 0 0 auto; }
@@ -478,6 +482,7 @@ function viewBuat() {
 
     <section class="card">
       <h3>Ditagihkan kepada</h3>
+      ${S.customers.length ? `<div class="search"><input id="custSearch" type="search" autocomplete="off" placeholder="Cari nama, ID, atau nomor telepon pelanggan" aria-label="Cari pelanggan"><div class="sugg" id="custSugg" hidden></div></div>` : ""}
       <label class="f">Pelanggan
         <select id="fCustomer">
           <option value="">— Pilih pelanggan —</option>
@@ -525,6 +530,24 @@ function viewBuat() {
       <div class="row"><button type="button" data-act="resetDraft">${d.editingId ? "Batal ubah" : "Kosongkan formulir"}</button></div>
     </section>
   </div>`;
+}
+
+// Matches every typed word against name, ID and phone (phone compared by digits).
+function matchCustomers(q) {
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean); if (!words.length) return [];
+  return sortedBy(S.customers, "name").filter((c) => {
+    const hay = `${c.name} ${c.code} ${c.address || ""}`.toLowerCase(), digits = String(c.phone || "").replace(/\D/g, "");
+    return words.every((w) => hay.includes(w) || (/^\d{3,}$/.test(w) && digits.includes(w.replace(/^0/, ""))));
+  });
+}
+function showCustSugg(q) {
+  const box = $("#custSugg"); if (!box) return;
+  const hits = matchCustomers(q);
+  if (!q.trim()) { box.hidden = true; box.innerHTML = ""; return; }
+  box.innerHTML = hits.length
+    ? hits.slice(0, 8).map((c) => `<button type="button" data-act="pickCust" data-id="${esc(c.id)}"><b>${esc(c.name)}</b><span>${esc([c.code, c.phone].filter(Boolean).join(" · "))}</span></button>`).join("") + (hits.length > 8 ? `<div class="small muted" style="padding:6px 12px">${hits.length - 8} lainnya — ketik lebih lengkap</div>` : "")
+    : `<div class="small muted" style="padding:8px 12px">Tidak ada pelanggan bernama "${esc(q)}".</div><button type="button" data-act="newCustFromSearch"><b>+ Tambah "${esc(q)}" sebagai pelanggan baru</b></button>`;
+  box.hidden = false;
 }
 
 function customerForm(c, mode) {
@@ -595,13 +618,13 @@ function viewRiwayat() {
 function viewPelanggan() {
   const ed = S.editing && S.editing.kind === "customer" ? S.editing : null;
   const q = (S.custQuery || "").toLowerCase();
-  const rows = sortedBy(S.customers, "name").filter((c) => !q || (c.name + " " + c.code + " " + (c.phone || "")).toLowerCase().includes(q));
+  const rows = q ? matchCustomers(q) : sortedBy(S.customers, "name");
   return `
   <div class="stack">
     <h2>Pelanggan</h2>
     ${ed ? `<section class="card"><h3>${ed.id ? "Ubah pelanggan" : "Pelanggan baru"}</h3>${customerForm(S.customers.find((c) => c.id === ed.id) || {}, "list")}</section>`
          : `<button type="button" class="primary" data-act="newCustomer">+ Tambah pelanggan</button>`}
-    ${S.customers.length > 5 ? `<input id="cQuery" placeholder="Cari nama, ID, atau telepon" value="${esc(S.custQuery || "")}" aria-label="Cari pelanggan">` : ""}
+    ${S.customers.length ? `<input id="cQuery" type="search" placeholder="Cari nama, ID, atau telepon" value="${esc(S.custQuery || "")}" aria-label="Cari pelanggan">` : ""}
     <div class="list">
       ${rows.length ? rows.map((c) => `<div class="li">
         <div class="li-top"><b>${esc(c.name)}</b><span class="small muted">${esc(c.code || "")}</span></div>
@@ -1364,6 +1387,8 @@ document.addEventListener("click", async (e) => {
     case "hFilter": S.histFilter = b.dataset.k; render(); break;
     case "dateToday": d.date = todayISO(); d.dateTouched = false; if (!S.numberTouched && !d.editingId) d.number = nextInvoiceNumber(d.date); saveDraftLocal(); render(); break;
     case "dashExport": dashExport(); break;
+    case "pickCust": d.customerId = id; saveDraftLocal(); render(); toast("Pelanggan dipilih: " + (S.customers.find((c) => c.id === id)?.name || "")); break;
+    case "newCustFromSearch": { const q = $("#custSearch").value.trim(); d.customerId = "__new"; saveDraftLocal(); render(); const n = $("#cName"); if (n) { n.value = q; n.focus(); } break; }
     case "goProduk": S.view = "produk"; S.editing = null; render(); window.scrollTo(0, 0); break;
     case "goLainnya": case "goKas": S.view = act === "goKas" ? "kas" : "lainnya"; S.editing = null; render(); window.scrollTo(0, 0); break;
     case "kasNew": S.editing = { kind: "cash", id: null, type: b.dataset.k }; render(); $("#kAmount")?.focus(); break;
@@ -1415,6 +1440,7 @@ document.addEventListener("click", async (e) => {
 document.addEventListener("input", (e) => {
   const t = e.target, d = S.draft;
   if (t.id === "hQuery") { S.histQuery = t.value; const pos = t.selectionStart; render(); const n = $("#hQuery"); n.focus(); n.setSelectionRange(pos, pos); return; }
+  if (t.id === "custSearch") { showCustSugg(t.value); return; }
   if (t.id === "cQuery") { S.custQuery = t.value; const pos = t.selectionStart; render(); const n = $("#cQuery"); n.focus(); n.setSelectionRange(pos, pos); return; }
   if (S.view !== "buat") return;
   if (t.dataset.f && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) {
