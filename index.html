@@ -272,8 +272,16 @@ S.cfg = lsGet(CFG_KEY);
 S.online = false; S.syncing = false; S.lastSync = null; S.installEvt = null;
 
 async function api(payload) {
-  const res = await fetch(S.cfg.url, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ ...payload, key: S.cfg.key }) });
-  let j; try { j = await res.json(); } catch { const e = new Error("bad_response"); e.code = "bad_response"; throw e; }
+  let res;
+  try { res = await fetch(S.cfg.url, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ ...payload, key: S.cfg.key }) }); }
+  catch { const e = new Error("network"); e.code = "network"; throw e; }
+  const body = await res.text();
+  let j; try { j = JSON.parse(body); } catch {
+    // Google answers with an HTML page when the script itself fails (syntax error, timeout, old deployment).
+    const title = (body.match(/<title>([^<]*)<\/title>/i) || [])[1] || "";
+    const msg = (body.replace(/<title>[\s\S]*?<\/title>/i, " ").replace(/<[^>]+>/g, " ").match(/(Exception|Error|Kesalahan|Pengecualian)[^.\n]{0,160}/i) || [])[0] || title || ("HTTP " + res.status);
+    const e = new Error(msg.trim()); e.code = "bad_response"; throw e;
+  }
   if (!j.ok) { const e = new Error(j.error || "error"); e.code = j.error; throw e; }
   return j;
 }
@@ -331,7 +339,8 @@ function localPut(coll, id, data) {
 function writeFailed(e) {
   if (e && e.code === "unauthorized") toast("Kode akses ditolak — perubahan tidak tersimpan.");
   else if (e && /unknown collection/.test(e.message || "")) { S.cashSupported = false; toast("Google Sheets perlu diperbarui untuk menyimpan kas. Tempel Code.gs terbaru lalu Deploy versi baru."); }
-  else toast("Gagal menyimpan ke Google Sheets. Periksa internet lalu coba lagi.");
+  else if (e && e.code === "network") toast("Gagal menyimpan: tidak ada koneksi internet. Coba lagi.");
+  else toast("Gagal menyimpan ke Google Sheets. Alasan: " + ((e && e.message) || "tidak diketahui") + ". Foto pesan ini dan kirim ke Claude.");
   pull(true);
 }
 async function put(coll, id, data) {
